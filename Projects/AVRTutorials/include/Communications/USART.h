@@ -5,12 +5,23 @@ Serial Communications
 
 USART (Universal Sync Async Receive Transmit)
 
+
+
 ####
 Pins
 ####
 
 PD0 (RXD) : Receive Data
 PD1 (TXD) : Transmit Data
+
+//Create Instance Object
+USART uart = USART();
+
+//Initiliaze the UART Module
+uart.Initialize(USART_CHANNEL_0,COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true);
+
+//Send Data OVer UART
+uart.TransmitString("Hello World");
 
  */ 
 
