@@ -22,7 +22,7 @@ int main(void)
   log.Initialize(LOGS_SOURCE_UART0);
   uart.Initialize(USART_CHANNEL_0,COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true);
   
-
+uart.TransmitString("Hello World");
   log.WriteText("Ima MAx Bayne n/");
 
 
