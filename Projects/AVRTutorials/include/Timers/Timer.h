@@ -1,3 +1,11 @@
+#ifndef __TIMER_H__
+#define __TIMER_H__
+
+//#include "Interrupts/TimerInterrupt.h"
+
+////////////////////////////////////////////
+//DESCRIPTION
+////////////////////////////////////////////
 /* 
 
 AtMega32A Timer
@@ -51,81 +59,46 @@ Timer As Normal Mode (Delay)
 */
 
 
+
 ////////////////////////////////////////////
-//ENUMS
+//CLASS
 ////////////////////////////////////////////
-
-#pragma region ENUMS
-
-//Define The Timer
-typedef enum
-{
-	TIMER_0,
-	TIMER_1,
-	TIMER_1_A,
-	TIMER_1_B,
-	TIMER_2
-}TIMER_SELECTOR;
-
-//Define The Clock Source
-typedef enum
-{
-	CLOCK_STOPPED,
-	CLOCK_PRESCAL_No,
-	CLOCK_PRESCAL_8,
-	CLOCK_PRESCAL_64,
-	CLOCK_PRESCAL_256,
-	CLOCK_PRESCAL_1024,
-	CLOCK_EXTERNAL_FALLING_EDGE,
-	CLOCK_EXTERNAL_Rissing_EDGE
-}CLOCK_SOURCE;
-
-//Define The Mode of Timer (Normal,CTC,PWM)
-typedef enum
-{
-	MODE_NORMAL,
-	MODE_COMPARE_CTC,
-	MODE_PWM_CORRECT,
-	MODE_PWM_FAST,
-	MODE_INPUT_CAPTURE_FLAG
-}MODE_SELECTOR;
-
-#pragma endregion ENUMS
-
-#ifndef __TIMER_H__
-#define __TIMER_H__
-
 
 class Timer
 {
 	private:
 	
-	TIMER_SELECTOR _Timer;      //The Current Timer
-	CLOCK_SOURCE _Clock;		//The Current Clock Source
-	MODE_SELECTOR _Mode;		//The Current Mode For Timer
-	bool _IsRunning;			//Is Timer Running or Stopped
-	bool _IsInterrupt;			//Is Timer use Interrupt or Just Timer Status [IsRunning]
-	int _NumberOfClock;			//The Number of Clock Required To Achieve Timer Delay
-	uint16 _InitialTimerValue;	//The Initial Value For Timer To Be Set To Achieve Timer Delay
-	uint16 _DelayTime;			//The Deplay Time Per Second To Make Timer Work On
-	uint64 _Frequency;			//The Frequency Of MicroController like 16 MHZ
-	bool _NeedOverflowCount;	//Is Delay Time Required To Use Multi OVerflow For Timer or Not
-	uint8 _OverflowCount;		//How Much Count of Overflow To Count To Achieve Delay Time
-	uint8 _ReminderValue;		//Reminder Value To be used beside Overflow Count
-	bool _IsOverflow;			//Is Timer Overflow in Normal Mode
+	Logs _log;
+
+	TIMER_SELECTOR _Timer;      	//The Current Timer
+	CLOCK_SOURCE _Clock;			//The Current Clock Source
+	MODE_SELECTOR _Mode;			//The Current Mode For Timer
+	PrescalerInfo _Prescaler;		//The Prescaler that used with timer and its info
+	bool _IsRunning;				//Is Timer Running or Stopped
+	bool _IsInterrupt;				//Is Timer use Interrupt or Just Timer Status [IsRunning]
+	//int _NumberOfClock;				//The Number of Clock Required To Achieve Timer Delay
+	uint16 _InitialTimerValue;		//The Initial Value For Timer To Be Set To Achieve Timer Delay
+	uint16 _DelayTime;				//The Deplay Time Per Second To Make Timer Work On
+	uint64 _Frequency;				//The Frequency Of MicroController like 16 MHZ
+	
+	uint16 _CurrentOverFlowCount;	//Current Count of Overflow
+	uint16 _RequiredOverflowCount;	//How Much Count of Overflow To Count To Achieve Delay Time
+	uint8 _RequiredReminderValue;  	//Reminder Value To be used beside Overflow Count
+	bool _IsOverflow;			  	//Is Timer Overflow in Normal Mode
 
 	public:
 	
-	Timer(TIMER_SELECTOR timer,CLOCK_SOURCE clock,uint64 frequency);
+	//Constructor
+	Timer(TIMER_SELECTOR timer,uint64 frequency);
 
-	//Delay With Some Time By Timer
-	void Delay(float delayTime);
+	//Delay With Some Time By Timer (seconds)
+	void Delay(float delayTime,TIME_UNIT unit);
 
 	//Start Timer as Normal Mode (Delay) with Some Period per Seconds Without using Interrupt , just Timer [IsRunning]
-	void StartTimer(float delayTime);
+	void StartTimer(float delayTime,TIME_UNIT unit,DURATION_MODE mode);
 	
 	//Start Timer as Normal Mode (Delay) with Some Period per Seconds With using Interrupt To Fire function Callback
-	void StartTimer(float delayTime,void(*functionPtr)());
+	void StartTimer(float delayTime,TIME_UNIT unit,DURATION_MODE mode,void(*functionPtr)());
 
 
 	//Stop Active Timer
@@ -143,20 +116,27 @@ class Timer
 
 	private:
 	
-	//Config Timer Clock Source (NoClock-Clock-Clock/8-Clock/64-Clock/256-Clock/1024-ExternalClockFallingEdge-ExternalClockRisingEdge)
-	void Config_Timer_Clock_Source(TIMER_SELECTOR timer,CLOCK_SOURCE source);
+	//Convert Time From Any Unit To MicroSecond
+	uint64 Time_To_MicroSecond(float time,TIME_UNIT unit);
 
-	//Calculate the Initial Value For Timer Depend on Frequency , Needed Delay Time Per Seconds and Set it
-	void Config_Timer_Initial_Value(TIMER_SELECTOR timer,uint64 frequency,uint16 delayTime);
-	
+	//Calc All Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
+	PrescalerInfo Get_Prescaler_Info(TIMER_SELECTOR timer,CLOCK_SOURCE preScaler,uint64 frequency,float time,TIME_UNIT unit);
+
+	//Select the Best Prescaler depend on Timer , Frequency , DelayTime , Time Unit and get the most accurated value
+	PrescalerInfo Get_Best_Prescaler(TIMER_SELECTOR timer , uint64 frequency,float delayTime,TIME_UNIT unit);
+
+
+
+	//Set Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
+	void Config_Timer_Initial_Value(TIMER_SELECTOR timer,PrescalerInfo prescaler);
+
 	//Config Timer Mode (Normal,Compare,Correct PWM,Fast PWM)
 	void Config_Timer_Mode(TIMER_SELECTOR timer,MODE_SELECTOR mode);
 	
+	//Config Timer Clock Source (NoClock-Clock-Clock/8-Clock/64-Clock/256-Clock/1024-ExternalClockFallingEdge-ExternalClockRisingEdge)
+	void Config_Timer_Clock_Source(TIMER_SELECTOR timer,CLOCK_SOURCE source);
 	
 	
-	//Set Initial Value For Timer inside Register [TCNT]
-	void Set_Timer_Initial_Value(TIMER_SELECTOR timer,uint16 value);
-
 }; //Timer
 
 #endif //__TIMER_H__

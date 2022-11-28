@@ -1,0 +1,97 @@
+////////////////////////////////////////////
+//ENUMS
+////////////////////////////////////////////
+
+#pragma region ENUMS
+
+//Define The Timer
+typedef enum
+{
+	TIMER_0,
+	TIMER_1,
+	TIMER_1_A,
+	TIMER_1_B,
+	TIMER_2
+}TIMER_SELECTOR;
+
+//Define The Clock Source
+typedef enum
+{
+	CLOCK_STOPPED,
+	CLOCK_PRESCAL_No,
+	CLOCK_PRESCAL_8,
+	CLOCK_PRESCAL_64,
+	CLOCK_PRESCAL_256,
+	CLOCK_PRESCAL_1024,
+	CLOCK_EXTERNAL_FALLING_EDGE,
+	CLOCK_EXTERNAL_Rissing_EDGE
+}CLOCK_SOURCE;
+
+//Define The Mode of Timer (Normal,CTC,PWM)
+typedef enum
+{
+	MODE_NORMAL,
+	MODE_COMPARE_CTC,
+	MODE_PWM_CORRECT,
+	MODE_PWM_FAST,
+	MODE_INPUT_CAPTURE_FLAG
+}MODE_SELECTOR;
+
+
+//Define The Time Unit will be used to config the Timer
+typedef enum
+{
+	MICRO,
+	MILLI, 
+	SECOND,
+	MINUTE,
+	HOUR
+}TIME_UNIT;
+
+//Define The Time Unit will be used to config the Timer
+typedef enum
+{
+	//Run Timer Once and Then Stop it
+	ONCE,
+
+	//Run Timer Repeatlly until User Stop it
+	REPEAT, 
+}DURATION_MODE;
+
+
+#pragma endregion ENUMS
+
+////////////////////////////////////////////
+//STRUCTURES
+////////////////////////////////////////////
+
+#pragma region STRUCTURES
+struct PrescalerInfo
+{
+	CLOCK_SOURCE Prescaler;			//The Prescaler Used
+	uint64 BaseFrequency;			//Base Frequency For MicroCOntroller
+	float FinalFrequency;			//Final Frequency After Prescaler that used With Timer Clocks
+	float Time;						//Time Needed for Delay
+	TIME_UNIT TimeUnit; 			//The Unit of Initial Time
+	uint64 TimeByMicroSecond;		//Time Converted From Any Unit To MicroSeconds
+	float TimeOfClock;				//Time Period For One Pulse Clock Per (MicoSecond)
+	uint64 NumberOfClocks;			//Number Of Clocks Needed To Achieve Specified Time
+	float OverflowCounts;			//Count of Overflow to Achieve the Specified Time
+	uint16 RequiredOverflowCounts;
+	uint8 RequiredReminderValue;
+};
+
+struct InterruptInfo
+{
+	float Time;						//Time Needed for Delay
+	TIME_UNIT TimeUnit; 			//The Unit of Initial Time
+	uint64 TimeByMicroSecond;		//Time Converted From Any Unit To MicroSeconds
+	uint16 InitialTimerValue; 		//The Initial Timer Value that will be Used To Start Count From it
+
+	DURATION_MODE DurationMode; 	//If Timer will Run Once and Then Stop or will be repeated
+	uint16 CurrentOverflowCounts;	//Current Count of Overflow Increased Inside ISR
+	uint16 RequiredOverflowCounts;	//Count of Overflow to Achieve the Specified Time
+	uint8  RequiredReminderValue; 	//Reminder Value if overflow count has decimal
+};
+
+#pragma endregion

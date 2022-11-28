@@ -91,55 +91,37 @@ int main(void)
 
 
 */
-
 #ifndef TIMERINTERRUPT_H_
 #define TIMERINTERRUPT_H_
-
-
-//----------------------------------------
-//Define ENUMS
-//----------------------------------------
-
-#pragma region Enums
-
-
-typedef enum
-{
-	INTERRUPT_TIMER_0,
-	INTERRUPT_TIMER_1,
-	INTERRUPT_TIMER_1_A,
-	INTERRUPT_TIMER_1_B,
-	INTERRUPT_TIMER_2
-}INTERRUPT_TIMER;
-
-//Define The Mode of Timer (Normal,CTC,PWM)
-typedef enum
-{
-	INTERRUPT_MODE_NORMAL,
-	INTERRUPT_MODE_OUTPUT_COMPARE,
-	INTERRUPT_MODE_INPUT_CAPTURE_FLAG
-}INTERRUPT_MODE;
-
-
-#pragma endregion Enums
-
-
 
 class TimerInterrupt
 {
 	public:
-		
+
+	//Hold Interrupt Info For Timer0
+	static InterruptInfo Timer0;
+
+	//Hold Interrupt Info For Timer1
+	static InterruptInfo Timer1;
+
+	//Hold Interrupt Info For Timer2
+	static InterruptInfo Timer2;
+
+
 	//Enable Timer Interrupt For Timer ,Mode  and Set Function Callback when Interrupt Fired
-	static void Enable_Interrupt(INTERRUPT_TIMER timer,INTERRUPT_MODE mode,void(* functionPtr)());
+	static void Enable_Interrupt(TIMER_SELECTOR timer,MODE_SELECTOR mode,InterruptInfo interruptInfo,void(* functionPtr)());
 	
 	//Disable Timer Interrupt For Timer,Mode and Clear Interrupt Flag
-	static void Disable_Interrupt(INTERRUPT_TIMER timer,INTERRUPT_MODE mode);
+	static void Disable_Interrupt(TIMER_SELECTOR timer,MODE_SELECTOR mode);
 	
 	//Clear Interrupt Flag For Timer , Mode when Interrupt fired we clear it inside ISR to avoid ReEnter ISR Again
-	static void Clear_Interrupt_Flag(INTERRUPT_TIMER timer,INTERRUPT_MODE mode);
+	static void Clear_Interrupt_Flag(TIMER_SELECTOR timer,MODE_SELECTOR mode);
 
 	//Read Interrupt Flag For Timer , Mode , return 1 when Flag On or 0 when flag off
-	static uint8 Read_Interrupt_Flag(INTERRUPT_TIMER timer,INTERRUPT_MODE mode);
+	static uint8 Read_Interrupt_Flag(TIMER_SELECTOR timer,MODE_SELECTOR mode);
+
+	//Stop Timer From External Location Like ISR Function
+	static void TimerInterrupt::Stop_Timer(TIMER_SELECTOR timer);
 };
 
 

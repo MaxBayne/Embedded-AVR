@@ -149,6 +149,22 @@ void USART::TransmitString(uint8 *text)
     }
 }
 
+//[Completed]
+// Transmit Multi Bytes
+void USART::TransmitString(char* text)
+{
+    uint8 index = 0;
+
+    // Loop From text Pointer to get the end of string [null terminator 0]
+    while (text[index] != 0)
+    {
+        // Send every Character one by one
+        TransmitByte(text[index]);
+
+        index++;
+    }
+}
+
 #pragma endregion
 
 #pragma region Helpers

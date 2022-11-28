@@ -151,6 +151,9 @@ class USART
     //Transmit Multi Bytes
     void TransmitString(uint8* text);
 
+    //Transmit Multi Bytes
+    void TransmitString(char* text);
+
 };
 
 

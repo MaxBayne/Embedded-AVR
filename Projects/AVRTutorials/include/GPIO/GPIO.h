@@ -125,6 +125,8 @@ typedef enum
 //Read LOW Byte Value From 16Bits
 #define BITWISE_GET_LOW_BYTE(register_16_Bits) (uint8)(register_16_Bits & 0x00FF)
 
+//Read Byte Value From 8Bits
+#define BITWISE_GET_BYTE(register_8_Bits) (uint8)(register_8_Bits)
 
 //Registers Operations --------------
 
