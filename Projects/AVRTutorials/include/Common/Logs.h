@@ -93,6 +93,9 @@ class Logs
     //Write (Byte | Decimal | Hex) Value For Register 16 Bit
     void WriteWordInfo(uint16 value,bool withLabel=false);
 
+    //Get the Reference of USART used with logs
+    USART* GetUSART();
+
 };
 
 #endif /* LOGS_H_ */

@@ -18,7 +18,7 @@ void Logs::Initialize(LOGS_SOURCE source)
     
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart.Initialize(USART_CHANNEL_0,COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true);
+        _uart.Initialize(USART_CHANNEL_0,USART_COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true);
     }
 
 }
@@ -271,4 +271,10 @@ void Logs::WriteWordInfo(uint16 value,bool withLabel=false)
     uint8 lowByte = BITWISE_GET_LOW_BYTE(value);
     WriteText("LOW : ");
     WriteByteInfo(lowByte,withLabel);
+}
+
+//Get the Reference of USART used with logs
+USART* Logs::GetUSART()
+{
+    return &_uart;
 }

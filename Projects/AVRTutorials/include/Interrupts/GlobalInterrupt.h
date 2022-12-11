@@ -2,6 +2,7 @@
 #define GLOBALINTERRUPT_H_
 
 
+
 class GlobalInterrupt
 {
 	public:
@@ -11,7 +12,6 @@ class GlobalInterrupt
 	
 	//Disable Global Interrupt
 	static void Disable_Global_Interrupt();
-	
 };
 
 

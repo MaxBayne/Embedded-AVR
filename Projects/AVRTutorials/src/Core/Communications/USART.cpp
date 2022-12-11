@@ -21,7 +21,7 @@ USART::USART()
 
 //[Completed]
 //Initialize Module
-void USART::Initialize(USART_CHANNEL channel, COMMUNICATION_MODE mode, uint64 frequency,uint32 baudRate, bool canReceive, bool canTransmit)
+void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uint64 frequency,uint32 baudRate, bool canReceive, bool canTransmit)
 {
 
     //Avoid Re-Initialized Module Again
@@ -71,7 +71,7 @@ void USART::Initialize(USART_CHANNEL channel, COMMUNICATION_MODE mode, uint64 fr
     Config_BaudRate(_baudRate, _frequency, _mode);
     
     // Config Frame Width and Parity and Mode (Sync/Async)
-    Config_Frame_Format(DATA_BITS_8,PARITY_MODE_NO,STOP_BITS_ONE);
+    Config_Frame_Format(USART_DATA_BITS_8,USART_PARITY_MODE_NO,USART_STOP_BITS_ONE);
 
     switch (channel)
     {
@@ -165,38 +165,56 @@ void USART::TransmitString(char* text)
     }
 }
 
+
+//Get the BaudRate like 9600,115200 etect
+uint32 USART::GetBaudRate()
+{
+    return _baudRate;
+
+}
+
+//Get the BaudRate Value Stored inside Register (UBRRL,UBRRH) like value 103 For rate 9600
+uint16 USART::GetBaudRateValue()
+{
+    return _buadRateValue;
+
+}
+
+
 #pragma endregion
 
 #pragma region Helpers
 
 //[Completed]
 // Calculate BaudRate Depend on user BaudRate , MCU Frequency and Save it inside Registers[UBRRH+UBRRL]
-void USART::Config_BaudRate(uint32 baudRate, uint64 frequency, COMMUNICATION_MODE mode)
+void USART::Config_BaudRate(uint32 baudRate, uint64 frequency, USART_COMMUNICATION_MODE mode)
 {
-    
     // To Calculate the Value of Baud Rate we will use Equation
-    uint16 buadRateValue;
+    
+    if (mode == USART_COMMUNICATION_MODE_SYNC)
+    {
+        _buadRateValue = (frequency / 4 / baudRate - 1);
+    }
+    else if (mode == USART_COMMUNICATION_MODE_ASYNC_NORMAL)
+    {
+        _buadRateValue = (frequency / 16 / baudRate - 1);
+    }
+    else if (mode == USART_COMMUNICATION_MODE_ASYNC_DOUBLE_SPEED)
+    {
+        _buadRateValue = (frequency / 8 / baudRate - 1);
+    }
 
-    if (mode == COMMUNICATION_MODE_ASYNC_NORMAL)
-    {
-        buadRateValue = frequency / 16 / baudRate - 1;
-    }
-    else if (mode == COMMUNICATION_MODE_ASYNC_DOUBLE_SPEED)
-    {
-        buadRateValue = frequency / 8 / baudRate - 1;
-    }
-    else if (mode == COMMUNICATION_MODE_SYNC)
-    {
-        buadRateValue = frequency / 4 / baudRate - 1;
-    }
 
     // Save baudRateValue inside Register UBRRH+UBRRL
-    USART_REG_UBRRL = BITWISE_GET_LOW_BYTE(buadRateValue);
-    USART_REG_UBRRH = BITWISE_GET_HIGH_BYTE(buadRateValue);
+    
+    USART_REG_UBRRL = BITWISE_GET_LOW_BYTE(_buadRateValue);
+    USART_REG_UBRRH = BITWISE_GET_HIGH_BYTE(_buadRateValue);
+   
+    
 }
 
 // Config the Format of Frame include Data Bits , Parity Check , Stop Bits
-void USART::Config_Frame_Format(DATA_BITS dataBits, PARITY_MODE parity, STOP_BITS stopBits)
+void USART::Config_Frame_Format(USART_DATA_BITS dataBits, USART_PARITY_MODE parity, USART_STOP_BITS stopBits)
 {
     _dataBits = dataBits;
     _parity = parity;

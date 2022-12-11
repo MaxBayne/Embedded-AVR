@@ -4,30 +4,40 @@
 
 #pragma region ENUMS
 
-//Define The Timer
+//Timer0 , Timer1 , Timer2
 typedef enum
 {
-	TIMER_0,
-	TIMER_1,
-	TIMER_1_A,
-	TIMER_1_B,
-	TIMER_2
-}TIMER_SELECTOR;
+	TIMER_0, 		//Used As Timer/External Counter over pin T0
+	TIMER_1,		//Used As Timer/External Counter over pin T1
+	TIMER_1_A,		//Used As Timer/External Counter over pin T1
+	TIMER_1_B,		//Used As Timer/External Counter over pin T0
+	TIMER_2			//Used As Timer/No External Counter (No Falling/Rising Edge)
+}TimerType;
 
-//Define The Clock Source
+//Clock Stopped , Original , With Prescaler , Clock External
 typedef enum
 {
-	CLOCK_STOPPED,
-	CLOCK_PRESCAL_No,
-	CLOCK_PRESCAL_8,
-	CLOCK_PRESCAL_64,
-	CLOCK_PRESCAL_256,
-	CLOCK_PRESCAL_1024,
-	CLOCK_EXTERNAL_FALLING_EDGE,
-	CLOCK_EXTERNAL_Rissing_EDGE
-}CLOCK_SOURCE;
+	CLOCK_STOPPED, 				//Clock is Stopped
+	CLOCK_ORIGINAL,				//Clock without Prescaler
+	CLOCK_WITH_PRESCALER,		//CLock with Prescaler
+	CLOCK_EXTERNAL_FALLING_EDGE,//Clock Source From External Pin in Falling Edge (When Pulse Go From High To Low)
+	CLOCK_EXTERNAL_Rissing_EDGE//Clock Source From External Pin in Rissing Edge (When Pulse Go From LOW To HIGH)
+}ClockType;
 
-//Define The Mode of Timer (Normal,CTC,PWM)
+//Prescaler No , 8 , 64 , 256 , 1024 , Auto
+typedef enum
+{
+	PRESCALER_NO,
+	PRESCALER_8,
+	PRESCALER_32, 				//For Timer2 Only
+	PRESCALER_64,
+	PRESCALER_128,				//For Timer2 Only
+	PRESCALER_256,
+	PRESCALER_1024,
+	PRESCALER_Auto,  			//Will be Selected with the lowest overflow counts
+}PrescalerType;
+
+//Timer Mode (Normal,CTC,PWM,Input Capture)
 typedef enum
 {
 	MODE_NORMAL,
@@ -35,28 +45,27 @@ typedef enum
 	MODE_PWM_CORRECT,
 	MODE_PWM_FAST,
 	MODE_INPUT_CAPTURE_FLAG
-}MODE_SELECTOR;
+}TimerMode;
 
-
-//Define The Time Unit will be used to config the Timer
+//Time Unit Micro,Mili,Second,Minute,Hour
 typedef enum
 {
-	MICRO,
-	MILLI, 
-	SECOND,
-	MINUTE,
-	HOUR
-}TIME_UNIT;
+	UNIT_MICRO,
+	UNIT_MILLI, 
+	UNIT_SECOND,
+	UNIT_MINUTE,
+	UNIT_HOUR
+}TimeUnit;
 
-//Define The Time Unit will be used to config the Timer
+//Time Duration Once , Repeat
 typedef enum
 {
 	//Run Timer Once and Then Stop it
-	ONCE,
+	DURATION_ONCE,
 
 	//Run Timer Repeatlly until User Stop it
-	REPEAT, 
-}DURATION_MODE;
+	DURATION_REPEAT, 
+}TimerDuration;
 
 
 #pragma endregion ENUMS
@@ -66,32 +75,21 @@ typedef enum
 ////////////////////////////////////////////
 
 #pragma region STRUCTURES
+
 struct PrescalerInfo
 {
-	CLOCK_SOURCE Prescaler;			//The Prescaler Used
 	uint64 BaseFrequency;			//Base Frequency For MicroCOntroller
 	float FinalFrequency;			//Final Frequency After Prescaler that used With Timer Clocks
-	float Time;						//Time Needed for Delay
-	TIME_UNIT TimeUnit; 			//The Unit of Initial Time
-	uint64 TimeByMicroSecond;		//Time Converted From Any Unit To MicroSeconds
+	uint64 TimeByMicroSecond;		//Time By MicroSecond
+	PrescalerType PrescalerType;	//The Prescaler Used
 	float TimeOfClock;				//Time Period For One Pulse Clock Per (MicoSecond)
 	uint64 NumberOfClocks;			//Number Of Clocks Needed To Achieve Specified Time
 	float OverflowCounts;			//Count of Overflow to Achieve the Specified Time
-	uint16 RequiredOverflowCounts;
-	uint8 RequiredReminderValue;
-};
-
-struct InterruptInfo
-{
-	float Time;						//Time Needed for Delay
-	TIME_UNIT TimeUnit; 			//The Unit of Initial Time
-	uint64 TimeByMicroSecond;		//Time Converted From Any Unit To MicroSeconds
-	uint16 InitialTimerValue; 		//The Initial Timer Value that will be Used To Start Count From it
-
-	DURATION_MODE DurationMode; 	//If Timer will Run Once and Then Stop or will be repeated
-	uint16 CurrentOverflowCounts;	//Current Count of Overflow Increased Inside ISR
-	uint16 RequiredOverflowCounts;	//Count of Overflow to Achieve the Specified Time
-	uint8  RequiredReminderValue; 	//Reminder Value if overflow count has decimal
+	uint16 OverflowInteger; 		//The Integer Value of Overflow Counts
+	uint8 OverflowFractions;		//The Fractions Value of Overflow Counts
+	uint16 InitialTimerValue;		//The Initial Value For Timer To Be Set To Achieve Timer Delay
+	uint16 CurrentOverFlowCount;	//Current Count of Overflow
+	
 };
 
 #pragma endregion

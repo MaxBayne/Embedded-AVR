@@ -36,7 +36,7 @@ uart.TransmitString("Hello World");
 
 
 
-//Define The USART
+//USART Channel0,Channel1,Channel2
 typedef enum
 {
 	USART_CHANNEL_0,
@@ -44,38 +44,38 @@ typedef enum
 	USART_CHANNEL_2
 }USART_CHANNEL;
 
-//Define The USART Communication Mode (Async-Sync)
+//USART Communication Mode (Async-Sync)
 typedef enum
 {
-	COMMUNICATION_MODE_SYNC,                    //Work With Clock Generated From Master To Slave Over []XCK] Pin
-	COMMUNICATION_MODE_ASYNC_NORMAL,            //Work With BaudRate Sit On Master/Slave like 9600 , No Need For Clock Just Same BaudRate Between Devices
-    COMMUNICATION_MODE_ASYNC_DOUBLE_SPEED,
-}COMMUNICATION_MODE;
+	USART_COMMUNICATION_MODE_SYNC,                    //Work With Clock Generated From Master To Slave Over []XCK] Pin
+	USART_COMMUNICATION_MODE_ASYNC_NORMAL,            //Work With BaudRate Sit On Master/Slave like 9600 , No Need For Clock Just Same BaudRate Between Devices
+    USART_COMMUNICATION_MODE_ASYNC_DOUBLE_SPEED,
+}USART_COMMUNICATION_MODE;
 
-//Define The Size of Bits For Data inside Frame
+//USART Size of Bits For Data inside Frame (5,6,7,8,9) Bits
 typedef enum
 {
-	DATA_BITS_5,
-	DATA_BITS_6,
-	DATA_BITS_7,
-    DATA_BITS_8,
-    DATA_BITS_9
-}DATA_BITS;
+	USART_DATA_BITS_5,
+	USART_DATA_BITS_6,
+	USART_DATA_BITS_7,
+    USART_DATA_BITS_8,
+    USART_DATA_BITS_9
+}USART_DATA_BITS;
 
-//Define The Parity Check Mode Used inside Frame
+//USART Parity Check Mode Used inside Frame (No,ODD,EVEN)
 typedef enum
 {
-	PARITY_MODE_NO,
-	PARITY_MODE_ODD,
-	PARITY_MODE_EVEN
-}PARITY_MODE;
+	USART_PARITY_MODE_NO,
+	USART_PARITY_MODE_ODD,
+	USART_PARITY_MODE_EVEN
+}USART_PARITY_MODE;
 
-//Define The Stop Bits used Inside Frame
+//USART Stop Bits used Inside Frame (ONE,TWO) BITS
 typedef enum
 {
-	STOP_BITS_ONE,
-	STOP_BITS_TWO
-}STOP_BITS;
+	USART_STOP_BITS_ONE,
+	USART_STOP_BITS_TWO
+}USART_STOP_BITS;
 
 #pragma endregion ENUMS
 
@@ -86,12 +86,13 @@ class USART
     private:
     
     USART_CHANNEL _channel;
-    COMMUNICATION_MODE _mode;
-    DATA_BITS _dataBits;
-    PARITY_MODE _parity;
-    STOP_BITS _stopBits;
+    USART_COMMUNICATION_MODE _mode;
+    USART_DATA_BITS _dataBits;
+    USART_PARITY_MODE _parity;
+    USART_STOP_BITS _stopBits;
     uint32 _baudRate;
     uint64 _frequency;
+    uint16 _buadRateValue;
     bool _canReceive;
     bool _canTransmit;
     
@@ -107,15 +108,15 @@ class USART
     USART();
 
     //Initialize Module
-    void Initialize(USART_CHANNEL channel,COMMUNICATION_MODE mode,uint64 frequency,uint32 baudRate,bool canReceive,bool canTransmit);
+    void Initialize(USART_CHANNEL channel,USART_COMMUNICATION_MODE mode,uint64 frequency,uint32 baudRate,bool canReceive,bool canTransmit);
 
     private:
 
     //Calculate BaudRate Depend on user BaudRate , MCU Frequency and Save it inside Registers[UBRRH+UBRRL]
-    void Config_BaudRate(uint32 baudRate,uint64 frequency,COMMUNICATION_MODE mode);
+    void Config_BaudRate(uint32 baudRate,uint64 frequency,USART_COMMUNICATION_MODE mode);
 
     //Config the Format of Frame include Data Bits , Parity Check , Stop Bits
-    void Config_Frame_Format(DATA_BITS dataBits,PARITY_MODE parity,STOP_BITS stopBits);
+    void Config_Frame_Format(USART_DATA_BITS dataBits,USART_PARITY_MODE parity,USART_STOP_BITS stopBits);
 
     //Enable Receive Data For Module by Set bit [RXEN]
     void EnableReceive(void);
@@ -154,8 +155,14 @@ class USART
     //Transmit Multi Bytes
     void TransmitString(char* text);
 
-};
+    //Get the BaudRate like 9600,115200 etect
+    uint32 GetBaudRate();
 
+    //Get the BaudRate Value Stored inside Register (UBRRL,UBRRH) like value 103 For rate 9600
+    uint16 GetBaudRateValue();
+
+};
+ 
 
 
 #endif /* USART_H_ */

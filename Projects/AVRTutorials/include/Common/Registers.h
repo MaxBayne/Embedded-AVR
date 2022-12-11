@@ -224,7 +224,8 @@ USART Registers
 
 #define USART_REG_UCSRA *((volatile uint8*) 0x2B)       //UART Control Status Register A
 #define USART_REG_UCSRB *((volatile uint8*) 0x2A)       //UART Control Status Register B
-#define USART_REG_UCSRC *((volatile uint8*) 0x40)       //UART Control Status Register C
+#define USART_REG_UCSRC *((volatile uint8*) 0x00)       //UART Control Status Register C //40
+
 
 
 #define USART_REG_UDRIE *((volatile uint8*) 0x5)       //UART Data Register Interrupt Enable

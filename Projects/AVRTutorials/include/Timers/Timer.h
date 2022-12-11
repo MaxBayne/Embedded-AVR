@@ -1,11 +1,6 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
-//#include "Interrupts/TimerInterrupt.h"
-
-////////////////////////////////////////////
-//DESCRIPTION
-////////////////////////////////////////////
 /* 
 
 AtMega32A Timer
@@ -59,83 +54,122 @@ Timer As Normal Mode (Delay)
 */
 
 
-
-////////////////////////////////////////////
-//CLASS
-////////////////////////////////////////////
-
 class Timer
 {
 	private:
 	
-	Logs _log;
+	#pragma region Members
 
-	TIMER_SELECTOR _Timer;      	//The Current Timer
-	CLOCK_SOURCE _Clock;			//The Current Clock Source
-	MODE_SELECTOR _Mode;			//The Current Mode For Timer
-	PrescalerInfo _Prescaler;		//The Prescaler that used with timer and its info
+	Logs _log; 						//Log to UART
+
+	uint64 _BaseFrequency;			//The Frequency Of MicroController like 16 MHZ
+	TimerType _Timer;      			//The Current Timer (Timer0,Timer1,Timer2)
+	ClockType _Clock;				//The Current Clock Source (Stopped,CLock With Prescaler,ExternalEdge)
+	PrescalerInfo _PrescalerInfo; 	//Current Used Prescaler with its info
+	TimerMode _Mode;				//The Current Mode For Timer (Normal,Compare,Input Capture,PWM)
+	TimerDuration _DurationMode;	//Run Timer Once or Repeated
+
+	float _Time;					//Time Needed for Delay
+	TimeUnit _TimeUnit;				//Timer Unit (MICRO,MILLI,SECOND,MINUTE,HOUR)
+
 	bool _IsRunning;				//Is Timer Running or Stopped
 	bool _IsInterrupt;				//Is Timer use Interrupt or Just Timer Status [IsRunning]
-	//int _NumberOfClock;				//The Number of Clock Required To Achieve Timer Delay
-	uint16 _InitialTimerValue;		//The Initial Value For Timer To Be Set To Achieve Timer Delay
-	uint16 _DelayTime;				//The Deplay Time Per Second To Make Timer Work On
-	uint64 _Frequency;				//The Frequency Of MicroController like 16 MHZ
-	
-	uint16 _CurrentOverFlowCount;	//Current Count of Overflow
-	uint16 _RequiredOverflowCount;	//How Much Count of Overflow To Count To Achieve Delay Time
-	uint8 _RequiredReminderValue;  	//Reminder Value To be used beside Overflow Count
 	bool _IsOverflow;			  	//Is Timer Overflow in Normal Mode
 
 	public:
+
+	void(*Overflow_Callback_Handler)(); //Overflow Handler
 	
+	#pragma endregion
+
+	public:
+	
+	#pragma region Constructors
+
 	//Constructor
-	Timer(TIMER_SELECTOR timer,uint64 frequency);
+	Timer(TimerType timer,uint64 baseFrequency);
 
-	//Delay With Some Time By Timer (seconds)
-	void Delay(float delayTime,TIME_UNIT unit);
+	#pragma endregion
 
-	//Start Timer as Normal Mode (Delay) with Some Period per Seconds Without using Interrupt , just Timer [IsRunning]
-	void StartTimer(float delayTime,TIME_UNIT unit,DURATION_MODE mode);
+	#pragma region Methods	
+
+	//Start Timer and Execute Action Every Period (Repeated Timer)
+	void Start(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto);
+
+	//Delay Timer and Execute Action Once after Period (Once Timer)
+	void Delay(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto);
+
+	//Stop Timer , Stop Interrupt
+	void Stop();
+
+	//Increase Current Overflow Count inside PrescalerInfo
+	void IncreaseCurrentOverflowCount();
+
+	//Set the Current Overflow Count inside PrescalerInfo
+	void SetCurrentOverflowCount(uint16 count);
+
+	//Set the Initial Timer Value For Current Timer
+	void SetInitialTimerValue(uint16 value);
+
 	
-	//Start Timer as Normal Mode (Delay) with Some Period per Seconds With using Interrupt To Fire function Callback
-	void StartTimer(float delayTime,TIME_UNIT unit,DURATION_MODE mode,void(*functionPtr)());
+	//Get Initial Timer Value stored inside PresaclerInfo
+	uint16 GetInitialTimerValue();
+
+	//Get the Current Overflow Count inside PrescalerInfo
+	uint16 GetCurrentOverflowCount();
+
+	//Get the Overflow integer inside PrescalerInfo
+	uint16 GetOverflowInteger();
+
+	//Get Timer Type (Timer0,Timer1,Timer2)
+	TimerType GetTimerType();
+
+	//Get Timer Mode (Normal,Compare,PWM,InputCapture)
+	TimerMode GetTimerMode();
+
+	//Get Timer Duration (Once,Repeat)
+	TimerDuration GetTimerDuration();
+
+	//Get Timer Prescaler Info
+	PrescalerInfo GetPrescalerInfo();
 
 
-	//Stop Active Timer
-	void StopTimer();
+
+
+	#pragma endregion
+
 	
-	//Get Status of Active Timer (Running/Stopped)
-	bool IsRunning();
-	
-	//Detect if Current Timer Use Interrupt or Not
-	bool IsInterrupt();
-
-	//Detect if Current Timer with Normal Mode is Overflow
-	bool IsOverflow();
-
 
 	private:
 	
+	#pragma region Helpers
+
 	//Convert Time From Any Unit To MicroSecond
-	uint64 Time_To_MicroSecond(float time,TIME_UNIT unit);
+	uint64 Convert_Time_To_MicroSecond(float time,TimeUnit unit);
 
 	//Calc All Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
-	PrescalerInfo Get_Prescaler_Info(TIMER_SELECTOR timer,CLOCK_SOURCE preScaler,uint64 frequency,float time,TIME_UNIT unit);
+	PrescalerInfo Get_Prescaler_Info(PrescalerType preScaler);
 
 	//Select the Best Prescaler depend on Timer , Frequency , DelayTime , Time Unit and get the most accurated value
-	PrescalerInfo Get_Best_Prescaler(TIMER_SELECTOR timer , uint64 frequency,float delayTime,TIME_UNIT unit);
+	PrescalerInfo Get_Prescaler_Auto();
+
+	//Print Prescaler info to log
+	void Print_Prescaler_Info(PrescalerInfo* prescaleInfo);
 
 
+	//Config Timer Clock Source (NoClock-Clock With Prescaler-ExternalClock)
+	void Config_Timer_Clock_Source(ClockType clock);
+	
+	//Config Timer Prescaler (NoPrescaler,Prescaler8,64,256,1024,Auto)
+	void Config_Timer_Prescaler(PrescalerType prescaler);
 
 	//Set Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
-	void Config_Timer_Initial_Value(TIMER_SELECTOR timer,PrescalerInfo prescaler);
+	void Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo);
 
 	//Config Timer Mode (Normal,Compare,Correct PWM,Fast PWM)
-	void Config_Timer_Mode(TIMER_SELECTOR timer,MODE_SELECTOR mode);
-	
-	//Config Timer Clock Source (NoClock-Clock-Clock/8-Clock/64-Clock/256-Clock/1024-ExternalClockFallingEdge-ExternalClockRisingEdge)
-	void Config_Timer_Clock_Source(TIMER_SELECTOR timer,CLOCK_SOURCE source);
-	
+	void Config_Timer_Mode(TimerMode mode);
+
+	#pragma endregion
 	
 }; //Timer
 

@@ -98,30 +98,27 @@ class TimerInterrupt
 {
 	public:
 
-	//Hold Interrupt Info For Timer0
-	static InterruptInfo Timer0;
+	//Reference For Timer0
+	static Timer* Timer0;
 
-	//Hold Interrupt Info For Timer1
-	static InterruptInfo Timer1;
+	//Reference For Timer1
+	static Timer* Timer1;
 
-	//Hold Interrupt Info For Timer2
-	static InterruptInfo Timer2;
+	//Reference For Timer2
+	static Timer* Timer2;
 
 
 	//Enable Timer Interrupt For Timer ,Mode  and Set Function Callback when Interrupt Fired
-	static void Enable_Interrupt(TIMER_SELECTOR timer,MODE_SELECTOR mode,InterruptInfo interruptInfo,void(* functionPtr)());
+	static void Enable_Interrupt(Timer* timer);
 	
 	//Disable Timer Interrupt For Timer,Mode and Clear Interrupt Flag
-	static void Disable_Interrupt(TIMER_SELECTOR timer,MODE_SELECTOR mode);
+	static void Disable_Interrupt(Timer* timer);
 	
 	//Clear Interrupt Flag For Timer , Mode when Interrupt fired we clear it inside ISR to avoid ReEnter ISR Again
-	static void Clear_Interrupt_Flag(TIMER_SELECTOR timer,MODE_SELECTOR mode);
+	static void Clear_Interrupt_Flag(Timer* timer);
 
 	//Read Interrupt Flag For Timer , Mode , return 1 when Flag On or 0 when flag off
-	static uint8 Read_Interrupt_Flag(TIMER_SELECTOR timer,MODE_SELECTOR mode);
-
-	//Stop Timer From External Location Like ISR Function
-	static void TimerInterrupt::Stop_Timer(TIMER_SELECTOR timer);
+	static uint8 Read_Interrupt_Flag(Timer* timer);
 };
 
 
