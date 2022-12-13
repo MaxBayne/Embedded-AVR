@@ -122,12 +122,13 @@ uint8 *USART::ReceiveString()
 
 //[Completed]
 // Transmit one Byte
-void USART::TransmitByte(uint8 byte)
+void USART::TransmitByte(uint8* byte)
 {
     // Check if UART Data Register is Ready To Write Data inside it
 
     // Loop until UART Data Register be Empty To Can Store the byte inside Buffer that we need to send
-    while (!IsTransmitBufferEmpty());
+    //while (!IsTransmitBufferEmpty());
+   while(!(UCSRA&(1<<UDRE)));
    
     // Save Byte inside Data Register
     USART_REG_UDR = byte;

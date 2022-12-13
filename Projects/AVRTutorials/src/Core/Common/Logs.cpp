@@ -32,6 +32,7 @@ void Logs::WriteLine(uint8* text)
 
         //Out Enter Key on the End of String line
         _uart.TransmitByte(0x0D);
+        _uart.TransmitString("\n");
 
     }
 
@@ -44,6 +45,7 @@ void Logs::NewLine()
     if(_source==LOGS_SOURCE_UART0)
     {
         _uart.TransmitByte(0x0D);
+        _uart.TransmitString("\n");
     }
 
 }

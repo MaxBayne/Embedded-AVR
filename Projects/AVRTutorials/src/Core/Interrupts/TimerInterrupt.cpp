@@ -538,7 +538,6 @@ ISR(TIMER0_OVF_vect)
 	}
 }
 
-
 //Interrupt Service Routine For Timer 1 Overflow
 ISR(TIMER1_OVF_vect)
 {
@@ -576,7 +575,7 @@ ISR(TIMER1_OVF_vect)
 	}
 
 }
-/*
+
 //Interrupt Service Routine For Timer 2 Overflow
 ISR(TIMER2_OVF_vect)
 {
@@ -594,6 +593,7 @@ ISR(TIMER2_OVF_vect)
 
  	//Check Overflow Counter Reach the Counts Need for Timing 1 Second (61 overflow with prescaler 1024)
   	if(timer2->GetCurrentOverflowCount()==timer2->GetOverflowInteger())
+	//if(timer2->GetCurrentOverflowCount()==488)
   	{
 		//Timer Reach to overflow count needed to wait for 1 second
     	timer2->SetCurrentOverflowCount(0);
@@ -615,7 +615,7 @@ ISR(TIMER2_OVF_vect)
 
 
 }
-*/
+
 #pragma endregion Interrupts For Overflow
 
 #pragma region Interrupts For Compare Match CTC

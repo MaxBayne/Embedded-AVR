@@ -147,7 +147,7 @@ class USART
     uint8* ReceiveString();
 
     //Transmit one Byte
-    void TransmitByte(uint8 byte);
+    void TransmitByte(uint8* byte);
 
     //Transmit Multi Bytes
     void TransmitString(uint8* text);

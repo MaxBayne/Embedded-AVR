@@ -294,8 +294,16 @@ PrescalerInfo Timer::Get_Prescaler_Info(PrescalerType preScaler)
 			result.FinalFrequency = (float)_BaseFrequency/1000000/8;
 		break;
 
+		case PRESCALER_32:
+			result.FinalFrequency = (float)_BaseFrequency/1000000/32;
+		break;
+
 		case PRESCALER_64:
 			result.FinalFrequency = (float)_BaseFrequency/1000000/64;
+		break;
+
+		case PRESCALER_128:
+			result.FinalFrequency = (float)_BaseFrequency/1000000/128;
 		break;
 
 		case PRESCALER_256:
@@ -314,18 +322,23 @@ PrescalerInfo Timer::Get_Prescaler_Info(PrescalerType preScaler)
 	result.NumberOfClocks = result.TimeByMicroSecond/result.TimeOfClock;
 
 	//Get the Overflow Counts
-	if(_Timer==TIMER_0 || _Timer==TIMER_2)
+	if(_Timer==TIMER_0)
 	{
 		result.OverflowCounts= (float)result.NumberOfClocks / 256; //2^8
 	} 
-	else
+	else if(_Timer==TIMER_1)
 	{
 		result.OverflowCounts= (float)result.NumberOfClocks / 65536; //2^16
 	}
+	else if(_Timer==TIMER_2)
+	{
+		result.OverflowCounts= (float)result.NumberOfClocks / 256; //2^8
+	}
+	
 
 	#ifdef ENABLE_LOGS_GET_PRESCALER_INFO
 
-	Print_Prescaler_Info(result);
+	Print_Prescaler_Info(&result);
 	
 	#endif
 
@@ -341,7 +354,9 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 	//We Will Calc PrescalerInfo For Every Prescaler and get the lowest value
 	PrescalerInfo prescaler_1024 = Get_Prescaler_Info(PrescalerType::PRESCALER_1024);
 	PrescalerInfo prescaler_256 = Get_Prescaler_Info(PrescalerType::PRESCALER_256);
+	PrescalerInfo prescaler_128 = Get_Prescaler_Info(PrescalerType::PRESCALER_128); //For Timer2 Only
 	PrescalerInfo prescaler_64 = Get_Prescaler_Info(PrescalerType::PRESCALER_64);
+	PrescalerInfo prescaler_32 = Get_Prescaler_Info(PrescalerType::PRESCALER_32); //For Timer2 Only
 	PrescalerInfo prescaler_8 = Get_Prescaler_Info(PrescalerType::PRESCALER_8);
 	
 	PrescalerInfo result;
@@ -356,9 +371,19 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 	{
 		lowestCount = prescaler_256.OverflowCounts;
 	}
+	if(prescaler_128.OverflowCounts<lowestCount)
+	{
+		//For Only Timer2
+		lowestCount = prescaler_128.OverflowCounts;
+	}
 	if(prescaler_64.OverflowCounts<lowestCount)
 	{
 		lowestCount = prescaler_64.OverflowCounts;
+	}
+	if(prescaler_32.OverflowCounts<lowestCount)
+	{
+		//For Only Timer2
+		lowestCount = prescaler_32.OverflowCounts;
 	}
 	if(prescaler_8.OverflowCounts<lowestCount)
 	{
@@ -375,9 +400,17 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 	{
 		result= prescaler_256;
 	}
+	else if(lowestCount==prescaler_128.OverflowCounts)
+	{
+		result= prescaler_128;
+	}
 	else if(lowestCount==prescaler_64.OverflowCounts)
 	{
 		result= prescaler_64;
+	}
+	else if(lowestCount==prescaler_32.OverflowCounts)
+	{
+		result= prescaler_32;
 	}
 	else if(lowestCount==prescaler_8.OverflowCounts)
 	{
@@ -395,8 +428,16 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 	_log.WriteFloat(prescaler_256.OverflowCounts);
 	_log.NewLine();
 
+	_log.WriteText("Pre.128 (Timer2 Only) Overflow Counts = ");
+	_log.WriteFloat(prescaler_128.OverflowCounts);
+	_log.NewLine();
+
 	_log.WriteText("Pre.64 Overflow Counts = ");
 	_log.WriteFloat(prescaler_64.OverflowCounts);
+	_log.NewLine();
+
+	_log.WriteText("Pre.32 (Timer2 Only) Overflow Counts = ");
+	_log.WriteFloat(prescaler_32.OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.8 Overflow Counts = ");
@@ -743,6 +784,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 {
 	//Config Timer Clock Source by Using Register [TCCR] (Timer/Counter Control Register) with Bits [CS]
 
+	//For Timer 0 and Timer 1 ================================
 	/*
 	D2  D1  D0
 	0	0	0     No Clock Source (Timer Stopped)
@@ -755,6 +797,22 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 	1	1	1     External Clk Source on T0 Rising Edge
 	*/
 	
+	//For Timer2 =============================================
+	/*
+	D2  D1  D0
+	0	0	0     No Clock Source (Timer Stopped)
+	0	0	1     Clock (No Prescalling)
+	0	1	0     Clock / 8
+	0	1	1     Clock / 32
+	1	0	0     Clock / 64
+	1	0	1     Clock / 128
+	1	1	0     Clock / 256
+	1	1	1     Clock / 1024
+	*/
+	
+
+
+
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
 	_log.WriteLine("====== Config Timer Prescaler ======");
 	//_log.WriteByteInfo(TIMER_REG_TCCR0);
@@ -955,21 +1013,41 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				_log.WriteLine("Timer2 With Prescaler 8");
 				#endif
 			}
-			else if(prescaler==PRESCALER_64)
+			else if(prescaler==PRESCALER_32)
 			{
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS20);   //CS20 [0] = 1
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS21);   //CS21 [1] = 1
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS22); //CS22 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				_log.WriteLine("Timer2 With Prescaler 64");
+				_log.WriteLine("Timer2 With Prescaler 32");
 				#endif
 			}
-			else if(prescaler==PRESCALER_256)
+			else if(prescaler==PRESCALER_64)
 			{
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS20); //CS20 [0] = 0
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS21); //CS21 [1] = 0
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
+				_log.WriteLine("Timer2 With Prescaler 64");
+				#endif
+			}
+			else if(prescaler==PRESCALER_128)
+			{
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS20);   //CS20 [0] = 1
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS21); //CS21 [1] = 0
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
+				_log.WriteLine("Timer2 With Prescaler 128");
+				#endif
+			}
+			else if(prescaler==PRESCALER_256)
+			{
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS20);   	//CS20 [0] = 0
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS21); 		//CS21 [1] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   	//CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
 				_log.WriteLine("Timer2 With Prescaler 256");
@@ -977,9 +1055,9 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 			}
 			else if(prescaler==PRESCALER_1024)
 			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS20);   //CS20 [0] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS21); //CS21 [1] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS20);   	//CS20 [0] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS21); 		//CS21 [1] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   	//CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
 				_log.WriteLine("Timer2 With Prescaler 1024");
