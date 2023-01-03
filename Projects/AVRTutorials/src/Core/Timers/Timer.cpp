@@ -67,13 +67,22 @@ void Timer::Start(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType c
 	//1) Get Prescaler Info For Timer if Timer Will Use It Only
 	if(_Clock==CLOCK_WITH_PRESCALER)
 	{
-		_PrescalerInfo=Get_Prescaler_Info(prescaler);
+		if(prescaler == PRESCALER_Auto)
+		{
+			_PrescalerInfo=Get_Prescaler_Auto();
+		}
+		else
+		{
+			_PrescalerInfo=Get_Prescaler_Info(prescaler);
+		}
+		
 	}
 
 	//2) Config Prescaler For Timer (No Prescaler - PreScaler8 - PreScaler64 - PreScaler256 - PreScaler1024)
 	Config_Timer_Prescaler(_PrescalerInfo.PrescalerType);
 	
 	//3) Config Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
+	//Config_Timer_Initial_Value(&_PrescalerInfo);
 	Config_Timer_Initial_Value(&_PrescalerInfo);
 
 	//4) Config Timer Mode To Normal/Overflow
@@ -272,15 +281,6 @@ uint64 Timer::Convert_Time_To_MicroSecond(float time,TimeUnit unit)
 //Calc Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
 PrescalerInfo Timer::Get_Prescaler_Info(PrescalerType preScaler)
 {
-	if(preScaler==PRESCALER_NO)
-	{
-		return;
-	}
-	else if(preScaler==PRESCALER_Auto)
-	{
-		return Get_Prescaler_Auto();
-	}
-
 	PrescalerInfo result;
 
 	result.PrescalerType = preScaler;
@@ -335,10 +335,12 @@ PrescalerInfo Timer::Get_Prescaler_Info(PrescalerType preScaler)
 		result.OverflowCounts= (float)result.NumberOfClocks / 256; //2^8
 	}
 	
+	
 
 	#ifdef ENABLE_LOGS_GET_PRESCALER_INFO
 
 	Print_Prescaler_Info(&result);
+	
 	
 	#endif
 
@@ -450,6 +452,7 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 
 	#endif
 
+
 	return result;
 
 }
@@ -467,9 +470,17 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 		case PRESCALER_256 :
 		_log.WriteLine("256");
 		break;
+
+		case PRESCALER_128 :
+		_log.WriteLine("128");
+		break;
 		
 		case PRESCALER_64 :
 		_log.WriteLine("64");
+		break;
+
+		case PRESCALER_32 :
+		_log.WriteLine("32");
 		break;
 
 		case PRESCALER_8 :
@@ -480,7 +491,7 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 		_log.WriteLine("NO");
 		break;
 	}
-	
+
 	_log.WriteText("BaseFrequency   	");
 	_log.WriteLong(prescaleInfo->BaseFrequency);
 	_log.NewLine();
@@ -520,6 +531,7 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 	_log.WriteText("InitialTimerVal ");
 	_log.WriteInteger(prescaleInfo->InitialTimerValue);
 	_log.NewLine();
+	_log.WriteLine("===================================");
 
 }
 
@@ -822,7 +834,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 	switch(_Timer)
 	{
 		case TIMER_0: //Use Timer Counter Control Register [TCCR0]
-		
+
 			if(prescaler==PRESCALER_NO)
 			{
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,CS00);   //CS00 [0] = 1
@@ -874,7 +886,6 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				_log.WriteLine("Timer0 With Prescaler 1024");
 				#endif
 			}
-			
 		
 		break;
 		
@@ -1063,6 +1074,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				_log.WriteLine("Timer2 With Prescaler 1024");
 				#endif
 			}
+
 			
 		break;
 	}

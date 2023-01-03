@@ -4,9 +4,9 @@
 #include "Timers/Timer.h"
 #include "avr/interrupt.h"
 #include "Interrupts/TimerInterrupt.h"
+//#include "DataStructures/DynamicQueue.h"
 
 Logs _log;
-
 
 //Delegates
 void toggle_Pin_A0()
@@ -15,8 +15,7 @@ void toggle_Pin_A0()
 	  GPIO::Pin_Toggle(GPIO_IO_PA0);
     //We Can Stop Timer Here by set Clock Source = nothing
 
-
-    _log.WriteLine("1 Second Fired , and Toggle Pin A0 \n");
+    //_log.WriteLine("1 Second Fired , and Toggle Pin A0");
 }
 
 void toggle_Pin_A1()
@@ -34,26 +33,24 @@ void toggle_Pin_A2()
 	  GPIO::Pin_Toggle(GPIO_IO_PA2);
 
     //We Can Stop Timer Here by set Clock Source = nothing
-
-
-   //_log.WriteLine("1 Second Fired , and Toggle Pin A2 \n");
+   //_log.WriteLine("1 Second Fired , and Toggle Pin A2");
 }
 
 int main(void)
 {
   //Configuration ----------------------------------------------------
   _log = Logs();
-  _log.Initialize(LOGS_SOURCE_UART0);
+  _log.Initialize(LOGS_SOURCE_UART0,true);
 
   Timer timer0 = Timer(TIMER_0,F_CPU);
   //Timer timer1 = Timer(TIMER_1,F_CPU);
-  Timer timer2 = Timer(TIMER_2,F_CPU);
+  //Timer timer2 = Timer(TIMER_2,F_CPU);
 
   GPIO::Port_Direction(GPIO_PORT_A,GPIO_DIRECTION_OUTPUT);
   
   timer0.Start(1,UNIT_SECOND,toggle_Pin_A0);
   //timer1.Start(1,UNIT_SECOND,toggle_Pin_A1);
-  timer2.Start(1,UNIT_SECOND,toggle_Pin_A2);
+  //timer2.Start(1,UNIT_SECOND,toggle_Pin_A2);
 
 
   //Loop ----------------------------------------------------

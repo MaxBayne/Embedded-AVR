@@ -29,7 +29,9 @@ uart.TransmitString("Hello World");
 #define USART_H_
 
 #include <Common/Common.h>
+#include <DataStructures/DynamicQueue.h>
 
+using namespace DataStructures;
 
 #pragma region ENUMS
 
@@ -47,7 +49,7 @@ typedef enum
 //USART Communication Mode (Async-Sync)
 typedef enum
 {
-	USART_COMMUNICATION_MODE_SYNC,                    //Work With Clock Generated From Master To Slave Over []XCK] Pin
+	USART_COMMUNICATION_MODE_SYNC,                    //Work With Clock Generated From Master To Slave Over [XCK] Pin
 	USART_COMMUNICATION_MODE_ASYNC_NORMAL,            //Work With BaudRate Sit On Master/Slave like 9600 , No Need For Clock Just Same BaudRate Between Devices
     USART_COMMUNICATION_MODE_ASYNC_DOUBLE_SPEED,
 }USART_COMMUNICATION_MODE;
@@ -85,6 +87,7 @@ class USART
     
     private:
     
+    
     USART_CHANNEL _channel;
     USART_COMMUNICATION_MODE _mode;
     USART_DATA_BITS _dataBits;
@@ -95,12 +98,18 @@ class USART
     uint16 _buadRateValue;
     bool _canReceive;
     bool _canTransmit;
+    bool _enableReceiveCompletedInterrupt;
+    bool _enableTransmitCompletedInterrupt;
+    bool _enableDataEmptyInterrupt;
     
     public:
 
     static bool Is_UART0_Initialized;
     static bool Is_UART1_Initialized;
     static bool Is_UART2_Initialized;
+    static DynamicQueue<char*> UART0_QUEUE;
+    //static DynamicQueue<char*> UART1_QUEUE;
+    //static DynamicQueue<char*> UART2_QUEUE;
 
 	public:
 	
@@ -108,7 +117,7 @@ class USART
     USART();
 
     //Initialize Module
-    void Initialize(USART_CHANNEL channel,USART_COMMUNICATION_MODE mode,uint64 frequency,uint32 baudRate,bool canReceive,bool canTransmit);
+    void Initialize(USART_CHANNEL channel,USART_COMMUNICATION_MODE mode,uint64 frequency,uint32 baudRate,bool canReceive,bool canTransmit,bool enableReceiveCompletedInterrupt,bool enableTransmitCompletedInterrupt,bool enableDataEmptyInterrupt);
 
     private:
 
@@ -152,14 +161,30 @@ class USART
     //Transmit Multi Bytes
     void TransmitString(uint8* text);
 
-    //Transmit Multi Bytes
-    void TransmitString(char* text);
+    // Enqueue/Store Text inside Queue
+    void WriteTextInQueue(char* text);
+
+    // Enqueue/Store Character inside Queue
+    void WriteCharacterInQueue(char* character);
 
     //Get the BaudRate like 9600,115200 etect
     uint32 GetBaudRate();
 
     //Get the BaudRate Value Stored inside Register (UBRRL,UBRRH) like value 103 For rate 9600
     uint16 GetBaudRateValue();
+
+    
+    void Enable_Interrupt_Transmit_Completed();
+
+    void Enable_Interrupt_Receive_Completed();
+
+    void Enable_Interrupt_Data_Register_Empty();
+
+    void Disable_Interrupt_Transmit_Completed();
+
+    void Disable_Interrupt_Receive_Completed();
+
+    void Disable_Interrupt_Data_Register_Empty();
 
 };
  

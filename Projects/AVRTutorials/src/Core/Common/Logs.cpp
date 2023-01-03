@@ -12,40 +12,91 @@ Logs::Logs()
     //Constructors
 }
 
-void Logs::Initialize(LOGS_SOURCE source)
+void Logs::Initialize(LOGS_SOURCE source,bool useInterrupt=false)
 {
     _source=source;
+    _useInterrupt =useInterrupt; 
     
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart.Initialize(USART_CHANNEL_0,USART_COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true);
+        _uart.Initialize(USART_CHANNEL_0,USART_COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true,false,false,_useInterrupt);
     }
 
 }
 
 //Write String Text Over Log Source and type Enter on the end of line to start new line
-void Logs::WriteLine(uint8* text)
+void Logs::WriteLine(uint8* text,LOGS_ENDLINE endline = LOGS_ENDLINE_RETURN)
 {
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart.TransmitString(text);
+        if(_useInterrupt)
+        {
+            //using Interrupt powered by Queue
 
-        //Out Enter Key on the End of String line
-        _uart.TransmitByte(0x0D);
-        _uart.TransmitString("\n");
+            //Store characters inside Queue List and Interrupt method for empty Data Register will pick up from characters
 
+            uint8 index = 0;
+
+            // Loop From text Pointer to get the end of string [null terminator 0]
+            while (text[index] != 0)
+            {
+                // Send every Character one by one
+                _uart.WriteCharacterInQueue(text[index]);
+
+                index++;
+            }
+
+            switch (endline)
+            {
+                case LOGS_ENDLINE_RETURN:
+                //Out Enter Key on the End of String line
+                _uart.WriteCharacterInQueue(0x0D);
+                break;
+
+                case LOGS_ENDLINE_WHITESPACE:
+                //Out Space Key on the End of String line
+                _uart.WriteCharacterInQueue(0x20);
+                break;
+            }
+        }
+        else
+        {
+            //without interrupt and send data directlly
+            _uart.TransmitString(text);
+
+            switch (endline)
+            {
+                case LOGS_ENDLINE_RETURN:
+                //Out Enter Key on the End of String line
+                _uart.TransmitByte(0x0D);
+                _uart.TransmitString("\n");
+                break;
+
+                case LOGS_ENDLINE_WHITESPACE:
+                //Out Space Key on the End of String line
+                _uart.TransmitByte(0x20);
+                _uart.TransmitString(" ");
+                break;
+            }
+        }
     }
-
-
-    
 }
+
 //Write Enter Key as Hex Value to Make New Line
 void Logs::NewLine()
 {
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart.TransmitByte(0x0D);
-        _uart.TransmitString("\n");
+        if(_useInterrupt)
+        {
+            //Out Enter Key on the End of String line
+            _uart.WriteCharacterInQueue(0x0D);
+        }
+        else
+        {
+            _uart.TransmitByte(0x0D);
+            _uart.TransmitString("\n");
+        }
     }
 
 }
@@ -94,7 +145,29 @@ void Logs::WriteText(uint8* text)
 {
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart.TransmitString(text);
+        if(_useInterrupt)
+        {
+            //with using interrupt and powered of Queue List
+            //Store characters inside Queue List and Interrupt method for empty Data Register will pick up from characters
+
+            uint8 index = 0;
+
+            // Loop From text Pointer to get the end of string [null terminator 0]
+            while (text[index] != 0)
+            {
+                // Send every Character one by one
+                _uart.WriteCharacterInQueue(text[index]);
+
+                index++;
+            }
+
+        }
+        else
+        {
+            //without using Interrupt and Queue List
+            _uart.TransmitString(text);
+        }
+        
     }
 }
 

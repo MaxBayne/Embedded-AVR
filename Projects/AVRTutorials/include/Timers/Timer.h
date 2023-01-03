@@ -156,7 +156,6 @@ class Timer
 	//Print Prescaler info to log
 	void Print_Prescaler_Info(PrescalerInfo* prescaleInfo);
 
-
 	//Config Timer Clock Source (NoClock-Clock With Prescaler-ExternalClock)
 	void Config_Timer_Clock_Source(ClockType clock);
 	

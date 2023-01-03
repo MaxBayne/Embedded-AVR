@@ -1,10 +1,15 @@
 #include "Core/Core.h"
 #include "Communications/USART.h"
+#include "avr/interrupt.h"
+#include "Interrupts/GlobalInterrupt.h"
 
 #pragma region Static Members 
 bool USART::Is_UART0_Initialized;
 bool USART::Is_UART1_Initialized;
 bool USART::Is_UART2_Initialized;
+DynamicQueue<char*> USART::UART0_QUEUE;
+//DynamicQueue<char*> USART::UART1_QUEUE;
+//DynamicQueue<char*> USART::UART2_QUEUE;
 #pragma endregion
 
 #pragma region Constructors
@@ -21,7 +26,7 @@ USART::USART()
 
 //[Completed]
 //Initialize Module
-void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uint64 frequency,uint32 baudRate, bool canReceive, bool canTransmit)
+void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uint64 frequency,uint32 baudRate, bool canReceive, bool canTransmit,bool enableReceiveCompletedInterrupt,bool enableTransmitCompletedInterrupt,bool enableDataEmptyInterrupt)
 {
 
     //Avoid Re-Initialized Module Again
@@ -40,13 +45,17 @@ void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uin
 
 
 
+    
     _baudRate = baudRate;
     _channel = channel;
     _mode = mode;
     _frequency = frequency;
     _canReceive = canReceive;
     _canTransmit = canTransmit;
-    
+    _enableReceiveCompletedInterrupt = enableReceiveCompletedInterrupt;
+    _enableTransmitCompletedInterrupt = enableTransmitCompletedInterrupt;
+    _enableDataEmptyInterrupt = enableDataEmptyInterrupt;
+
     // enable/Disable Receive Data
     if (_canReceive)
     {
@@ -65,6 +74,39 @@ void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uin
     else
     {
         DisableTransmit();
+    }
+
+    //enable/Disable UART Interrupt
+    if(_enableReceiveCompletedInterrupt||_enableTransmitCompletedInterrupt||_enableDataEmptyInterrupt)
+    {
+        GlobalInterrupt::Enable_Global_Interrupt();
+    }
+
+    if(_enableTransmitCompletedInterrupt)
+    {
+        Enable_Interrupt_Transmit_Completed();
+    }
+    else
+    {
+        Disable_Interrupt_Transmit_Completed();
+    }
+
+    if(_enableReceiveCompletedInterrupt)
+    {
+        Enable_Interrupt_Receive_Completed();
+    }
+    else
+    {
+        Disable_Interrupt_Receive_Completed();
+    }
+
+    if(_enableDataEmptyInterrupt)
+    {
+        Enable_Interrupt_Data_Register_Empty();
+    }
+    else
+    {
+        Disable_Interrupt_Data_Register_Empty();
     }
 
     // Config Buad Rate For UART
@@ -150,22 +192,33 @@ void USART::TransmitString(uint8 *text)
     }
 }
 
-//[Completed]
-// Transmit Multi Bytes
-void USART::TransmitString(char* text)
+
+// Enqueue/Store Text inside Queue
+void USART::WriteTextInQueue(char* text)
 {
-    uint8 index = 0;
-
-    // Loop From text Pointer to get the end of string [null terminator 0]
-    while (text[index] != 0)
+    switch (_channel)
     {
-        // Send every Character one by one
-        TransmitByte(text[index]);
+        case USART_CHANNEL_0:
+            UART0_QUEUE.Enqueue(text);
+        break;
 
-        index++;
+        case USART_CHANNEL_1:
+            //UART1_QUEUE.Enqueue(text);
+        break;
+
+        case USART_CHANNEL_2:
+            //UART2_QUEUE.Enqueue(text);
+        break;
     }
+
+    
 }
 
+// Enqueue/Store Character inside Queue
+void USART::WriteCharacterInQueue(char* character)
+{
+    UART0_QUEUE.Enqueue(character);
+}
 
 //Get the BaudRate like 9600,115200 etect
 uint32 USART::GetBaudRate()
@@ -181,6 +234,35 @@ uint16 USART::GetBaudRateValue()
 
 }
 
+void USART::Enable_Interrupt_Transmit_Completed()
+{
+    BITWISE_SET_BIT(USART_REG_UCSRB,TXCIE); //[TXCIE]
+}
+
+void USART::Enable_Interrupt_Receive_Completed()
+{
+    BITWISE_SET_BIT(USART_REG_UCSRB,RXCIE); //[RXCIE]
+}
+
+void USART::Enable_Interrupt_Data_Register_Empty()
+{
+    BITWISE_SET_BIT(USART_REG_UCSRB,UDRIE); //[UDRIE]
+}
+
+void USART::Disable_Interrupt_Transmit_Completed()
+{
+    BITWISE_CLEAR_BIT(USART_REG_UCSRB,TXCIE); //[TXCIE]
+}
+
+void USART::Disable_Interrupt_Receive_Completed()
+{
+    BITWISE_CLEAR_BIT(USART_REG_UCSRB,RXCIE); //[RXCIE]
+}
+
+void USART::Disable_Interrupt_Data_Register_Empty()
+{
+    BITWISE_CLEAR_BIT(USART_REG_UCSRB,UDRIE); //[UDRIE]
+}
 
 #pragma endregion
 
@@ -306,3 +388,42 @@ bool USART::IsTransmitComplete()
 }
 
 #pragma endregion
+
+//---------------------------------------------------------
+//UART Interrupt Services Routine From Vector Table :
+//---------------------------------------------------------
+
+#pragma region Interrupts
+
+//Interrupt Service Routine For Timer 0 Overflow
+
+//USART RX Receive Complete
+ISR(USART_RXC_vect)
+{
+	
+}
+
+//USART TX Transmit/Send Complete
+ISR(USART_TXC_vect)
+{
+
+}
+
+//USART Data Register Empty
+ISR(USART_UDRE_vect)
+{
+    if(USART::UART0_QUEUE.Peak()!=NULL)
+    {
+        //out one character from queue
+        USART_REG_UDR = USART::UART0_QUEUE.Dequeue();
+
+        //if found duplicated return
+        if(USART::UART0_QUEUE.Peak()==0x0D)
+        {
+            USART::UART0_QUEUE.Dequeue();
+        }
+    }
+}
+
+
+#pragma endregion Interrupts

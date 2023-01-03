@@ -28,6 +28,14 @@ typedef enum
     LOGS_SOURCE_I2C
 }LOGS_SOURCE;
 
+//Define the Endline of WriteText WhiteSpace , Return , Ignore
+typedef enum
+{
+    LOGS_ENDLINE_WHITESPACE,
+    LOGS_ENDLINE_RETURN,
+    LOGS_ENDLINE_IGNORE
+}LOGS_ENDLINE;
+
 #pragma endregion
 
 class Logs
@@ -35,6 +43,7 @@ class Logs
     private:
     LOGS_SOURCE _source;
     USART _uart;
+    bool _useInterrupt;
     
 
     public:
@@ -47,10 +56,10 @@ class Logs
     //Methods --------------------------------
 
     //Config Module
-    void Initialize(LOGS_SOURCE source);
+    void Initialize(LOGS_SOURCE source,bool useInterrupt=false);
 
     //Write String Text Over Log Source and type Enter on the end of line to start new line
-    void WriteLine(uint8* text);
+    void WriteLine(uint8* text,LOGS_ENDLINE endline = LOGS_ENDLINE_RETURN);
 
     //Write Enter Key as Hex Value to Make New Line
     void NewLine();
