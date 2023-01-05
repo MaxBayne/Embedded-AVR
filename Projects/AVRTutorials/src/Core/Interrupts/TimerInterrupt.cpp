@@ -66,14 +66,14 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 	GlobalInterrupt::Enable_Global_Interrupt();
 
 	//Enable Timer Interrupt
-	TimerType timerType = timer->GetTimerType();
-	TimerMode timerMode = timer->GetTimerMode();
+	TimerType* timerType = timer->GetTimerType();
+	TimerMode* timerMode = timer->GetTimerMode();
 
-	switch(timerType)
+	switch(*timerType)
 	{
 		case TIMER_0 :
 		
-		if(timerMode==MODE_NORMAL)
+		if(*timerMode==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 0
 			
@@ -84,7 +84,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 			TimerInterrupt::Timer0=timer;
 			
 		}
-		else if(timerMode==MODE_COMPARE_CTC)
+		else if(*timerMode==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 0
 			
@@ -101,7 +101,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 		
 		case  TIMER_1:
 		
-		if(timerMode==MODE_NORMAL)
+		if(*timerMode==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 1
 			
@@ -113,7 +113,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 
 			
 		}
-		else if(timerMode==MODE_COMPARE_CTC)
+		else if(*timerMode==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 1 A,B Channel
 			
@@ -129,7 +129,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 
 			
 		}
-		else if(timerMode==MODE_INPUT_CAPTURE_FLAG)
+		else if(*timerMode==MODE_INPUT_CAPTURE_FLAG)
 		{
 			msg="Enabled Timer1 Interrupt (Input Capture Mode)";
 
@@ -144,7 +144,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 		
 		case  TIMER_2:
 		
-		if(timerMode==MODE_NORMAL)
+		if(*timerMode==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 2
 			
@@ -155,7 +155,7 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 			TimerInterrupt::Timer2=timer;
 			
 		}
-		else if(timerMode==MODE_COMPARE_CTC)
+		else if(*timerMode==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 2
 			
@@ -218,11 +218,11 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 	#endif
 
 	//Disable Timer Interrupt
-	switch(timer->GetTimerType())
+	switch(*timer->GetTimerType())
 	{
 		case TIMER_0 :
 		
-		if(timer->GetTimerMode()==MODE_NORMAL)
+		if(*timer->GetTimerMode()==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 0
 			
@@ -231,7 +231,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 			msg="Disabled Timer0 Interrupt (Noraml Mode)";
 			
 		}
-		else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+		else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 0
 			
@@ -245,7 +245,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 		
 		case  TIMER_1:
 		
-		if(timer->GetTimerMode()==MODE_NORMAL)
+		if(*timer->GetTimerMode()==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 1
 			
@@ -254,7 +254,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 			msg="Disabled Timer1 Interrupt (Noraml Mode)";
 			
 		}
-		else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+		else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 1 A,B Channel
 			
@@ -264,7 +264,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 
 			msg="Disabled Timer1 Interrupt (Output Compare Mode)";
 		}
-		else if(timer->GetTimerMode()==MODE_INPUT_CAPTURE_FLAG)
+		else if(*timer->GetTimerMode()==MODE_INPUT_CAPTURE_FLAG)
 		{
 			//For Input Capture Flag Timer 1
 			BITWISE_CLEAR_BIT(INTERRUPT_REG_TIMSK,TICIE1);  //[TICIE1]
@@ -276,7 +276,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 		
 		case  TIMER_2:
 		
-		if(timer->GetTimerMode()==MODE_NORMAL)
+		if(*timer->GetTimerMode()==MODE_NORMAL)
 		{
 			//For Normal Mode (Overflow) Timer 2
 			
@@ -284,7 +284,7 @@ static void TimerInterrupt::Disable_Interrupt(Timer* timer)
 
 			msg="Disabled Timer2 Interrupt (Noraml Mode)";
 		}
-		else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+		else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 		{
 			//For Output Compare Timer 2
 			
@@ -345,11 +345,11 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 	_log.WriteLine("====== Clear Interrupt ======");
 	#endif
 
-	switch(timer->GetTimerType())
+	switch(*timer->GetTimerType())
 	{
 		case TIMER_0 :
 		
-			if(timer->GetTimerMode()==MODE_NORMAL)
+			if(*timer->GetTimerMode()==MODE_NORMAL)
 			{
 				//For Normal Mode (Overflow) Timer 0 
 			
@@ -358,7 +358,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 				msg="Cleared Interrupt Flag For Timer 0 (Normal Mode)";
 				
 			}
-			else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+			else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 			{
 				//For Output Compare Timer 0 
 			
@@ -373,7 +373,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 		
 		case  TIMER_1 :
 		
-			if(timer->GetTimerMode()==MODE_NORMAL)
+			if(*timer->GetTimerMode()==MODE_NORMAL)
 			{
 				//For Normal Mode (Overflow) Timer 1 
 			
@@ -382,7 +382,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 				msg="Cleared Interrupt Flag For Timer 1 (Normal Mode)";
 				
 			}
-			else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+			else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 			{
 				//For Output Compare Timer 1 A,B Channel
 			
@@ -392,7 +392,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 				msg="Cleared Interrupt Flag For Timer 1 (Output Compare Mode)";
 				
 			}
-			else if(timer->GetTimerMode()==MODE_INPUT_CAPTURE_FLAG)
+			else if(*timer->GetTimerMode()==MODE_INPUT_CAPTURE_FLAG)
 			{
 				//For Input Capture Flag Timer 1 
 				BITWISE_SET_BIT(INTERRUPT_REG_TIFR,ICF1);  //[ICF1]
@@ -404,7 +404,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 		
 		case  TIMER_2:
 		
-			if(timer->GetTimerMode()==MODE_NORMAL)
+			if(*timer->GetTimerMode()==MODE_NORMAL)
 			{
 				//For Normal Mode (Overflow) Timer 2
 			
@@ -412,7 +412,7 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 
 				msg="Cleared Interrupt Flag For Timer 2 (Normal Mode)";
 			}
-			else if(timer->GetTimerMode()==MODE_COMPARE_CTC)
+			else if(*timer->GetTimerMode()==MODE_COMPARE_CTC)
 			{
 				//For Output Compare Timer 2
 			
@@ -432,23 +432,23 @@ static void TimerInterrupt::Clear_Interrupt_Flag(Timer* timer)
 //Read Interrupt Flag For Timer , Mode , return 1 when Flag On or 0 when flag off
 static uint8 TimerInterrupt::Read_Interrupt_Flag(Timer* timer)
 {
-	TimerType timerType = timer->GetTimerType();
+	TimerType* timerType = timer->GetTimerType();
 
-	switch (timer->GetTimerMode())
+	switch (*timer->GetTimerMode())
 	{
 		case MODE_NORMAL :
 
-			if(timerType==TIMER_0)
+			if(*timerType==TIMER_0)
 			{
 				//For Normal Mode (Overflow) Timer 0 
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,TOV0); //[TOV0]
 			}
-			else if(timerType==TIMER_1)
+			else if(*timerType==TIMER_1)
 			{
 				//For Normal Mode (Overflow) Timer 1 
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,TOV1); //[TOV1]
 			}
-			else if(timerType==TIMER_2)
+			else if(*timerType==TIMER_2)
 			{
 				//For Normal Mode (Overflow) Timer 2 
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,TOV2); //[TOV2]
@@ -458,22 +458,22 @@ static uint8 TimerInterrupt::Read_Interrupt_Flag(Timer* timer)
 
 		case MODE_COMPARE_CTC :
 
-			if (timerType == TIMER_0)
+			if (*timerType == TIMER_0)
 			{
 				// For Output Compare Timer 0
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR, OCF0); //[OCF0]
 			}
-			else if (timerType == TIMER_1_A)
+			else if (*timerType == TIMER_1_A)
 			{
 				//For Output Compare Timer 1 A Channel
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,OCF1A); //For Channel A  [OCF1A]
 			}
-			else if (timerType == TIMER_1_B)
+			else if (*timerType == TIMER_1_B)
 			{
 				//For Output Compare Timer 1 B Channel
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,OCF1B); //For Channel B  [OCF1B]
 			}
-			else if (timerType == TIMER_2)
+			else if (*timerType == TIMER_2)
 			{
 				//For Output Compare Timer 2
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,OCF2); //[OCF2]
@@ -482,7 +482,7 @@ static uint8 TimerInterrupt::Read_Interrupt_Flag(Timer* timer)
 		break;
 
 		case MODE_INPUT_CAPTURE_FLAG :
-			if(timerType==TIMER_1)
+			if(*timerType==TIMER_1)
 			{
 				//For Input Capture Flag Timer 1 
 				return BITWISE_GET_BIT(INTERRUPT_REG_TIFR,ICF1);  //[ICF1]
@@ -529,7 +529,7 @@ ISR(TIMER0_OVF_vect)
 		}
 		
 		//If Timer Mode Duration is Once then Stop Timer otherwise will be Repeated
-		if(timer0->GetTimerDuration()==DURATION_ONCE)
+		if(*timer0->GetTimerDuration()==DURATION_ONCE)
 		{
 			//Stop Timer Here ---------------------
 			timer0->Stop();
@@ -566,7 +566,7 @@ ISR(TIMER1_OVF_vect)
 		}
 		
 		//If Timer Mode Duration is Once then Stop Timer otherwise will be Repeated
-		if(timer1->GetTimerDuration()==DURATION_ONCE)
+		if(*timer1->GetTimerDuration()==DURATION_ONCE)
 		{
 			//Stop Timer Here ---------------------
 			timer1->Stop();
@@ -605,7 +605,7 @@ ISR(TIMER2_OVF_vect)
 		}
 		
 		//If Timer Mode Duration is Once then Stop Timer otherwise will be Repeated
-		if(timer2->GetTimerDuration()==DURATION_ONCE)
+		if(*timer2->GetTimerDuration()==DURATION_ONCE)
 		{
 			//Stop Timer Here ---------------------
 			timer2->Stop();

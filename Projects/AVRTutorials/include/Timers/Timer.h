@@ -65,7 +65,7 @@ class Timer
 	uint64 _BaseFrequency;			//The Frequency Of MicroController like 16 MHZ
 	TimerType _Timer;      			//The Current Timer (Timer0,Timer1,Timer2)
 	ClockType _Clock;				//The Current Clock Source (Stopped,CLock With Prescaler,ExternalEdge)
-	PrescalerInfo _PrescalerInfo; 	//Current Used Prescaler with its info
+	PrescalerInfo* _PrescalerInfo; 	//Current Used Prescaler with its info
 	TimerMode _Mode;				//The Current Mode For Timer (Normal,Compare,Input Capture,PWM)
 	TimerDuration _DurationMode;	//Run Timer Once or Repeated
 
@@ -122,16 +122,16 @@ class Timer
 	uint16 GetOverflowInteger();
 
 	//Get Timer Type (Timer0,Timer1,Timer2)
-	TimerType GetTimerType();
+	TimerType* GetTimerType();
 
 	//Get Timer Mode (Normal,Compare,PWM,InputCapture)
-	TimerMode GetTimerMode();
+	TimerMode* GetTimerMode();
 
 	//Get Timer Duration (Once,Repeat)
-	TimerDuration GetTimerDuration();
+	TimerDuration* GetTimerDuration();
 
 	//Get Timer Prescaler Info
-	PrescalerInfo GetPrescalerInfo();
+	PrescalerInfo* GetPrescalerInfo();
 
 
 
@@ -148,10 +148,10 @@ class Timer
 	uint64 Convert_Time_To_MicroSecond(float time,TimeUnit unit);
 
 	//Calc All Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
-	PrescalerInfo Get_Prescaler_Info(PrescalerType preScaler);
+	PrescalerInfo* Get_Prescaler_Info(PrescalerType preScaler);
 
 	//Select the Best Prescaler depend on Timer , Frequency , DelayTime , Time Unit and get the most accurated value
-	PrescalerInfo Get_Prescaler_Auto();
+	PrescalerInfo* Get_Prescaler_Auto();
 
 	//Print Prescaler info to log
 	void Print_Prescaler_Info(PrescalerInfo* prescaleInfo);

@@ -20,7 +20,7 @@
 
 #pragma region Constructors
 
-//[Tested]
+
 Timer::Timer(TimerType timer,uint64 baseFrequency)
 {
 	//Initialize Members
@@ -78,12 +78,13 @@ void Timer::Start(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType c
 		
 	}
 
+	//Print_Prescaler_Info(_PrescalerInfo);
+
 	//2) Config Prescaler For Timer (No Prescaler - PreScaler8 - PreScaler64 - PreScaler256 - PreScaler1024)
-	Config_Timer_Prescaler(_PrescalerInfo.PrescalerType);
+	Config_Timer_Prescaler(_PrescalerInfo->PrescalerType);
 	
 	//3) Config Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
-	//Config_Timer_Initial_Value(&_PrescalerInfo);
-	Config_Timer_Initial_Value(&_PrescalerInfo);
+	Config_Timer_Initial_Value(_PrescalerInfo);
 
 	//4) Config Timer Mode To Normal/Overflow
 	Config_Timer_Mode(TimerMode::MODE_NORMAL);
@@ -158,13 +159,13 @@ void Timer::Stop()
 //Increase Current Overflow Count inside PrescalerInfo
 void Timer::IncreaseCurrentOverflowCount()
 {
-	_PrescalerInfo.CurrentOverFlowCount++;
+	_PrescalerInfo->CurrentOverFlowCount++;
 }
 
 //Set the Current Overflow Count inside PrescalerInfo
 void Timer::SetCurrentOverflowCount(uint16 count)
 {
-	_PrescalerInfo.CurrentOverFlowCount=count;
+	_PrescalerInfo->CurrentOverFlowCount=count;
 }
 
 //Set the Initial Timer Value For Current Timer
@@ -197,41 +198,41 @@ void Timer::SetInitialTimerValue(uint16 value)
 		break;
 	}
 
-	_PrescalerInfo.InitialTimerValue = value;
+	_PrescalerInfo->InitialTimerValue = value;
 }
 
 //Get Initial Timer Value stored inside PresaclerInfo
 uint16 Timer::GetInitialTimerValue()
 {
-	return _PrescalerInfo.InitialTimerValue;
+	return _PrescalerInfo->InitialTimerValue;
 }
 
 //Get the Current Overflow Count inside PrescalerInfo
 uint16 Timer::GetCurrentOverflowCount()
 {
-	return _PrescalerInfo.CurrentOverFlowCount;
+	return _PrescalerInfo->CurrentOverFlowCount;
 }
 
 //Get Timer Type (Timer0,Timer1,Timer2)
-TimerType Timer::GetTimerType()
+TimerType* Timer::GetTimerType()
 {
-	return _Timer;
+	return &_Timer;
 }
 
 //Get Timer Mode (Normal,Compare,PWM,InputCapture)
-TimerMode Timer::GetTimerMode()
+TimerMode* Timer::GetTimerMode()
 {
-	return _Mode;
+	return &_Mode;
 }
 
 //Get Timer Duration (Once,Repeat)
-TimerDuration Timer::GetTimerDuration()
+TimerDuration* Timer::GetTimerDuration()
 {
-	return _DurationMode;
+	return &_DurationMode;
 }
 
 //Get Timer Prescaler Info
-PrescalerInfo Timer::GetPrescalerInfo()
+PrescalerInfo* Timer::GetPrescalerInfo()
 {
 	return _PrescalerInfo;
 }
@@ -239,7 +240,7 @@ PrescalerInfo Timer::GetPrescalerInfo()
 //Get the Overflow integer inside PrescalerInfo
 uint16 Timer::GetOverflowInteger()
 {
-	return _PrescalerInfo.OverflowInteger;
+	return _PrescalerInfo->OverflowInteger;
 
 }
 
@@ -247,7 +248,7 @@ uint16 Timer::GetOverflowInteger()
 
 
 
-//[Tested]
+
 //Convert Time From Any Unit To MicroSecond
 uint64 Timer::Convert_Time_To_MicroSecond(float time,TimeUnit unit)
 {
@@ -277,144 +278,151 @@ uint64 Timer::Convert_Time_To_MicroSecond(float time,TimeUnit unit)
 
 }
 
-//[Tested]
-//Calc Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
-PrescalerInfo Timer::Get_Prescaler_Info(PrescalerType preScaler)
-{
-	PrescalerInfo result;
 
-	result.PrescalerType = preScaler;
-	result.BaseFrequency=_BaseFrequency;
-	result.TimeByMicroSecond = Convert_Time_To_MicroSecond(_Time,_TimeUnit);
+//Calc Prescaler info like Overflow Counts depend on Timer, Base Frequency,time by microSecond Unit,preScaler (clock_Source)
+PrescalerInfo* Timer::Get_Prescaler_Info(PrescalerType preScaler)
+{
 	
+	PrescalerInfo* result=(PrescalerInfo*)malloc(sizeof(PrescalerInfo));
+
+
+	result->PrescalerType = preScaler;
+	result->BaseFrequency=_BaseFrequency;
+	result->TimeByMicroSecond = Convert_Time_To_MicroSecond(_Time,_TimeUnit);
+	
+	
+
 	//Get the Final Frequency used with Timer
 	switch (preScaler)
 	{
 		case PRESCALER_8:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/8;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/8;
 		break;
 
 		case PRESCALER_32:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/32;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/32;
 		break;
 
 		case PRESCALER_64:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/64;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/64;
 		break;
 
 		case PRESCALER_128:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/128;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/128;
 		break;
 
 		case PRESCALER_256:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/256;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/256;
 		break;
 
 		case PRESCALER_1024:
-			result.FinalFrequency = (float)_BaseFrequency/1000000/1024;
+			result->FinalFrequency = (float)_BaseFrequency/1000000/1024;
 		break;
 	}
 
 	//Get time of One Clock (MicroSecond) tc=1/frequency
-	result.TimeOfClock = 1.0/result.FinalFrequency;
+	result->TimeOfClock = 1.0/result->FinalFrequency;
 
 	//Get the Number of Clocks  needed to achieve time
-	result.NumberOfClocks = result.TimeByMicroSecond/result.TimeOfClock;
+	result->NumberOfClocks = result->TimeByMicroSecond/result->TimeOfClock;
 
 	//Get the Overflow Counts
 	if(_Timer==TIMER_0)
 	{
-		result.OverflowCounts= (float)result.NumberOfClocks / 256; //2^8
+		result->OverflowCounts= (float)result->NumberOfClocks / 256; //2^8
 	} 
 	else if(_Timer==TIMER_1)
 	{
-		result.OverflowCounts= (float)result.NumberOfClocks / 65536; //2^16
+		result->OverflowCounts= (float)result->NumberOfClocks / 65536; //2^16
 	}
 	else if(_Timer==TIMER_2)
 	{
-		result.OverflowCounts= (float)result.NumberOfClocks / 256; //2^8
+		result->OverflowCounts= (float)result->NumberOfClocks / 256; //2^8
 	}
 	
 	
 
 	#ifdef ENABLE_LOGS_GET_PRESCALER_INFO
 
-	Print_Prescaler_Info(&result);
-	
+	Print_Prescaler_Info(result);
 	
 	#endif
 
+	
 	return result;
 }
 
-//[Tested]
+
 //Select the Best Prescaler depend on Timer , Frequency , DelayTime , Time Unit and get the most accurated value
-PrescalerInfo Timer::Get_Prescaler_Auto()
+PrescalerInfo* Timer::Get_Prescaler_Auto()
 {
 	//We Will Calc Overflow Counts For All PreScalers and Take the Lowest Overflow Counts With Less Deciemal
 	
 	//We Will Calc PrescalerInfo For Every Prescaler and get the lowest value
-	PrescalerInfo prescaler_1024 = Get_Prescaler_Info(PrescalerType::PRESCALER_1024);
-	PrescalerInfo prescaler_256 = Get_Prescaler_Info(PrescalerType::PRESCALER_256);
-	PrescalerInfo prescaler_128 = Get_Prescaler_Info(PrescalerType::PRESCALER_128); //For Timer2 Only
-	PrescalerInfo prescaler_64 = Get_Prescaler_Info(PrescalerType::PRESCALER_64);
-	PrescalerInfo prescaler_32 = Get_Prescaler_Info(PrescalerType::PRESCALER_32); //For Timer2 Only
-	PrescalerInfo prescaler_8 = Get_Prescaler_Info(PrescalerType::PRESCALER_8);
+	PrescalerInfo* prescaler_1024 = Get_Prescaler_Info(PrescalerType::PRESCALER_1024);
+	PrescalerInfo* prescaler_256 = Get_Prescaler_Info(PrescalerType::PRESCALER_256);
+	PrescalerInfo* prescaler_128 = Get_Prescaler_Info(PrescalerType::PRESCALER_128); //For Timer2 Only
+	PrescalerInfo* prescaler_64 = Get_Prescaler_Info(PrescalerType::PRESCALER_64);
+	PrescalerInfo* prescaler_32 = Get_Prescaler_Info(PrescalerType::PRESCALER_32); //For Timer2 Only
+	PrescalerInfo* prescaler_8 = Get_Prescaler_Info(PrescalerType::PRESCALER_8);
+	PrescalerInfo* result;
+
+	//Print_Prescaler_Info(prescaler_1024);
 	
-	PrescalerInfo result;
 
 	//Get the Lowest overflow Counts from all prescalers
-	float lowestCount=prescaler_1024.OverflowCounts;
-	if(prescaler_1024.OverflowCounts<lowestCount)
+	float lowestCount=prescaler_1024->OverflowCounts;
+	if(prescaler_1024->OverflowCounts<lowestCount)
 	{
-		lowestCount = prescaler_1024.OverflowCounts;
+		lowestCount = prescaler_1024->OverflowCounts;
 	}
-	if(prescaler_256.OverflowCounts<lowestCount)
+	if(prescaler_256->OverflowCounts<lowestCount)
 	{
-		lowestCount = prescaler_256.OverflowCounts;
+		lowestCount = prescaler_256->OverflowCounts;
 	}
-	if(prescaler_128.OverflowCounts<lowestCount)
-	{
-		//For Only Timer2
-		lowestCount = prescaler_128.OverflowCounts;
-	}
-	if(prescaler_64.OverflowCounts<lowestCount)
-	{
-		lowestCount = prescaler_64.OverflowCounts;
-	}
-	if(prescaler_32.OverflowCounts<lowestCount)
+	if(prescaler_128->OverflowCounts<lowestCount)
 	{
 		//For Only Timer2
-		lowestCount = prescaler_32.OverflowCounts;
+		lowestCount = prescaler_128->OverflowCounts;
 	}
-	if(prescaler_8.OverflowCounts<lowestCount)
+	if(prescaler_64->OverflowCounts<lowestCount)
 	{
-		lowestCount = prescaler_8.OverflowCounts;
+		lowestCount = prescaler_64->OverflowCounts;
 	}
+	if(prescaler_32->OverflowCounts<lowestCount)
+	{
+		//For Only Timer2
+		lowestCount = prescaler_32->OverflowCounts;
+	}
+	if(prescaler_8->OverflowCounts<lowestCount)
+	{
+		lowestCount = prescaler_8->OverflowCounts;
+	}
+	
 	
 
 	//Detect the Lowest Prescaler Info
-	if(lowestCount==prescaler_1024.OverflowCounts)
+	if(lowestCount==prescaler_1024->OverflowCounts)
 	{
 		result= prescaler_1024;
 	}
-	else if(lowestCount==prescaler_256.OverflowCounts)
+	else if(lowestCount==prescaler_256->OverflowCounts)
 	{
 		result= prescaler_256;
 	}
-	else if(lowestCount==prescaler_128.OverflowCounts)
+	else if(lowestCount==prescaler_128->OverflowCounts)
 	{
 		result= prescaler_128;
 	}
-	else if(lowestCount==prescaler_64.OverflowCounts)
+	else if(lowestCount==prescaler_64->OverflowCounts)
 	{
 		result= prescaler_64;
 	}
-	else if(lowestCount==prescaler_32.OverflowCounts)
+	else if(lowestCount==prescaler_32->OverflowCounts)
 	{
 		result= prescaler_32;
 	}
-	else if(lowestCount==prescaler_8.OverflowCounts)
+	else if(lowestCount==prescaler_8->OverflowCounts)
 	{
 		result= prescaler_8;
 	}
@@ -423,34 +431,41 @@ PrescalerInfo Timer::Get_Prescaler_Auto()
 	#ifdef ENABLE_LOGS_GET_PRESCALER_AUTO
 	_log.WriteLine("====== Get Prescaler Auto ======");
 	_log.WriteText("Pre.1024 Overflow Counts = ");
-	_log.WriteFloat(prescaler_1024.OverflowCounts);
+	_log.WriteFloat(prescaler_1024->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.256 Overflow Counts = ");
-	_log.WriteFloat(prescaler_256.OverflowCounts);
+	_log.WriteFloat(prescaler_256->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.128 (Timer2 Only) Overflow Counts = ");
-	_log.WriteFloat(prescaler_128.OverflowCounts);
+	_log.WriteFloat(prescaler_128->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.64 Overflow Counts = ");
-	_log.WriteFloat(prescaler_64.OverflowCounts);
+	_log.WriteFloat(prescaler_64->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.32 (Timer2 Only) Overflow Counts = ");
-	_log.WriteFloat(prescaler_32.OverflowCounts);
+	_log.WriteFloat(prescaler_32->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Pre.8 Overflow Counts = ");
-	_log.WriteFloat(prescaler_8.OverflowCounts);
+	_log.WriteFloat(prescaler_8->OverflowCounts);
 	_log.NewLine();
 
 	_log.WriteText("Best Prescaler = ");
-	_log.WriteFloat(result.OverflowCounts);
+	_log.WriteFloat(result->OverflowCounts);
 	_log.NewLine();
 
 	#endif
+
+	free(prescaler_1024);
+	free(prescaler_256);
+	free(prescaler_128);
+	free(prescaler_64);
+	free(prescaler_32);
+	free(prescaler_8);
 
 
 	return result;
@@ -535,7 +550,7 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 
 }
 
-//[Tested]
+
 //Config Timer Clock Source (NoClock-CLock Original-Clock With Prescaler-ExternalClock)
 void Timer::Config_Timer_Clock_Source(ClockType clock)
 {
@@ -790,7 +805,7 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 
 }
 
-//[Tested]
+
 //Config Timer Prescaler (NoPrescaler,Prescaler8,64,256,1024,Auto)
 void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 {
@@ -1086,7 +1101,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 
 }
 
-//[Tested]
+
 //Set Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
 void Timer::Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo)
 {
@@ -1190,7 +1205,7 @@ void Timer::Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo)
 
 }
 
-//[Tested]
+
 //Config Timer Mode (Normal,Compare,Correct PWM,Fast PWM)
 void Timer::Config_Timer_Mode(TimerMode mode)
 {
