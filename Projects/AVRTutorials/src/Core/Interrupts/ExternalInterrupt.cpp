@@ -17,6 +17,7 @@ ExternalInterrupt::ExternalInterrupt(EXTI_PIN pin,EXTI_TRIGGER_MODE triggerMode,
 {
 	_pin=pin;
 	_triggerMode=triggerMode;
+	_log=nullptr;
 	
 	//Clear External Interrupt Flag
 	Clear_Interrupt_Flag();
@@ -28,7 +29,29 @@ ExternalInterrupt::ExternalInterrupt(EXTI_PIN pin,EXTI_TRIGGER_MODE triggerMode,
 	Enable_External_Interrupt(functionPtr);
 
 	//Enable Global Interrupt
-	GlobalInterrupt::Enable_Global_Interrupt();
+	GlobalInterrupt globalInterrupt;
+
+	globalInterrupt.Enable_Global_Interrupt();
+}
+ExternalInterrupt::ExternalInterrupt(EXTI_PIN pin,EXTI_TRIGGER_MODE triggerMode,void(*functionPtr)(),Logs* log)
+{
+	_pin=pin;
+	_triggerMode=triggerMode;
+	_log=log;
+	
+	//Clear External Interrupt Flag
+	Clear_Interrupt_Flag();
+	
+	//Set Trigger Mode For External Interrupt (LowLevel,AnyChange,FallingEdge,RissingEdge)
+	Set_Trigger_Mode();
+	
+	//Enable External Interrupt
+	Enable_External_Interrupt(functionPtr);
+
+	//Enable Global Interrupt
+	GlobalInterrupt globalInterrupt(_log);
+
+	globalInterrupt.Enable_Global_Interrupt();
 }
 
 

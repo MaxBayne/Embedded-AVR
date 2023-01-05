@@ -7,6 +7,15 @@
 
 //#define ENABLE_LOGS_GLOBAL_INTERRUPT
 
+GlobalInterrupt::GlobalInterrupt()
+{
+	_log=nullptr;
+}
+GlobalInterrupt::GlobalInterrupt(Logs* log)
+{
+	_log=log;
+}
+
 //Enable Global Interrupt
 void GlobalInterrupt::Enable_Global_Interrupt()
 {
@@ -19,18 +28,15 @@ void GlobalInterrupt::Enable_Global_Interrupt()
 	
 	*/
 	
-	//Config Log 
-	#ifdef ENABLE_LOGS_GLOBAL_INTERRUPT
-	Logs _log=Logs(); 
-	_log.Initialize(LOGS_SOURCE_UART0);
-	#endif
-
 
 	BITWISE_SET_BIT(STATUS_REG_SREG,SREG_I); //7
 	//sei();
 
 	#ifdef ENABLE_LOGS_GLOBAL_INTERRUPT
-	_log.WriteLine("Enabled Global Interrupt");
+	if(_log!=NULL)
+	{
+		_log.WriteLine("Enabled Global Interrupt");
+	}
 	#endif
 	
 }
@@ -47,17 +53,12 @@ void GlobalInterrupt::Disable_Global_Interrupt()
 	
 	*/
 	
-	//Config Log 
-	#ifdef ENABLE_LOGS_GLOBAL_INTERRUPT
-	Logs _log=Logs(); 
-	_log.Initialize(LOGS_SOURCE_UART0);
-	#endif
-
 	BITWISE_CLEAR_BIT(STATUS_REG_SREG,SREG_I); //7
 	//cli();
 
 	#ifdef ENABLE_LOGS_GLOBAL_INTERRUPT
-	_log.WriteLine("Disabled Global Interrupt");
+	if(_log!=NULL)
+		_log.WriteLine("Disabled Global Interrupt");
 	#endif
 }
 

@@ -63,7 +63,8 @@ static void TimerInterrupt::Enable_Interrupt(Timer* timer)
 	 #endif
 	
 	//Enable Global Interrupt
-	GlobalInterrupt::Enable_Global_Interrupt();
+	GlobalInterrupt globalInterrupt;
+	globalInterrupt.Enable_Global_Interrupt();
 
 	//Enable Timer Interrupt
 	TimerType* timerType = timer->GetTimerType();

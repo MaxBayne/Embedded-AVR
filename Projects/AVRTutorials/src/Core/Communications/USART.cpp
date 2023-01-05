@@ -79,7 +79,8 @@ void USART::Initialize(USART_CHANNEL channel, USART_COMMUNICATION_MODE mode, uin
     //enable/Disable UART Interrupt
     if(_enableReceiveCompletedInterrupt||_enableTransmitCompletedInterrupt||_enableDataEmptyInterrupt)
     {
-        GlobalInterrupt::Enable_Global_Interrupt();
+        GlobalInterrupt globalInterrupt;
+        globalInterrupt.Enable_Global_Interrupt();
     }
 
     if(_enableTransmitCompletedInterrupt)

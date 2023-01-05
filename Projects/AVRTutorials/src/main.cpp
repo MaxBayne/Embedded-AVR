@@ -6,7 +6,7 @@
 #include "Interrupts/TimerInterrupt.h"
 //#include "DataStructures/DynamicQueue.h"
 
-Logs _log;
+Logs* _log;
 
 //Delegates
 void toggle_Pin_A0()
@@ -39,10 +39,10 @@ void toggle_Pin_A2()
 int main(void)
 {
   //Configuration ----------------------------------------------------
-  _log = Logs();
-  _log.Initialize(LOGS_SOURCE_UART0,true);
+  _log = (Logs*)malloc(sizeof(Logs));
+  _log->Initialize(LOGS_SOURCE_UART0,true);
 
-  Timer timer0 = Timer(TIMER_0,F_CPU);
+  Timer timer0 = Timer(TIMER_0,F_CPU,_log);
   //Timer timer1 = Timer(TIMER_1,F_CPU);
   //Timer timer2 = Timer(TIMER_2,F_CPU);
 

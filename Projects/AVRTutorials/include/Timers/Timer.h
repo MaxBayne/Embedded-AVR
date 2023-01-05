@@ -60,7 +60,7 @@ class Timer
 	
 	#pragma region Members
 
-	Logs _log; 						//Log to UART
+	Logs* _log; 						//Log to UART
 
 	uint64 _BaseFrequency;			//The Frequency Of MicroController like 16 MHZ
 	TimerType _Timer;      			//The Current Timer (Timer0,Timer1,Timer2)
@@ -87,7 +87,7 @@ class Timer
 	#pragma region Constructors
 
 	//Constructor
-	Timer(TimerType timer,uint64 baseFrequency);
+	Timer(TimerType timer,uint64 baseFrequency,Logs* log=NULL);
 
 	#pragma endregion
 

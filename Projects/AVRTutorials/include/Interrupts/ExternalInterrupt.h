@@ -160,11 +160,13 @@ class ExternalInterrupt
 	//Trigger Mode LowLeve , AnyChange , Falling , Rising Edge
 	EXTI_TRIGGER_MODE _triggerMode;
 	
+	Logs* _log;
 	
 	public:
 	
 	//Constructor
 	ExternalInterrupt(EXTI_PIN pin,EXTI_TRIGGER_MODE triggerMode,void (*functionPtr)());
+	ExternalInterrupt(EXTI_PIN pin,EXTI_TRIGGER_MODE triggerMode,void (*functionPtr)(),Logs* log);
 	
 	private:
 	

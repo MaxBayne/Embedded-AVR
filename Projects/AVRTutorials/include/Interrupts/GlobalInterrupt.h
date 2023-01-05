@@ -1,17 +1,24 @@
 #ifndef GLOBALINTERRUPT_H_
 #define GLOBALINTERRUPT_H_
 
-
+#include "Common/Logs.h"
 
 class GlobalInterrupt
 {
+	private:
+	Logs* _log;
+
 	public:
+
+	//Constructors
+	GlobalInterrupt();
+	GlobalInterrupt(Logs* log);
 	
 	//Enable Global Interrupt
-	static void Enable_Global_Interrupt();
+	void Enable_Global_Interrupt();
 	
 	//Disable Global Interrupt
-	static void Disable_Global_Interrupt();
+	void Disable_Global_Interrupt();
 };
 
 
