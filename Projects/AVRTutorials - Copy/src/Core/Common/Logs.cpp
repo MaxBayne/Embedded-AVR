@@ -16,11 +16,10 @@ void Logs::Initialize(LOGS_SOURCE source,bool useInterrupt=false)
 {
     _source=source;
     _useInterrupt =useInterrupt; 
-    _uart = (USART*)malloc(sizeof(USART));
     
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart->Initialize(USART_CHANNEL_0,USART_COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true,false,false,_useInterrupt);
+        //_uart.Initialize(USART_CHANNEL_0,USART_COMMUNICATION_MODE_ASYNC_NORMAL,F_CPU,9600,true,true,false,false,_useInterrupt);
     }
 
 }
@@ -42,7 +41,7 @@ void Logs::WriteLine(uint8* text,LOGS_ENDLINE endline = LOGS_ENDLINE_RETURN)
             while (text[index] != 0)
             {
                 // Send every Character one by one
-                _uart->WriteCharacterInQueue(text[index]);
+                _uart.WriteCharacterInQueue(text[index]);
 
                 index++;
             }
@@ -51,32 +50,32 @@ void Logs::WriteLine(uint8* text,LOGS_ENDLINE endline = LOGS_ENDLINE_RETURN)
             {
                 case LOGS_ENDLINE_RETURN:
                 //Out Enter Key on the End of String line
-                _uart->WriteCharacterInQueue(0x0D);
+                _uart.WriteCharacterInQueue(0x0D);
                 break;
 
                 case LOGS_ENDLINE_WHITESPACE:
                 //Out Space Key on the End of String line
-                _uart->WriteCharacterInQueue(0x20);
+                _uart.WriteCharacterInQueue(0x20);
                 break;
             }
         }
         else
         {
             //without interrupt and send data directlly
-            _uart->TransmitString(text);
+            _uart.TransmitString(text);
 
             switch (endline)
             {
                 case LOGS_ENDLINE_RETURN:
                 //Out Enter Key on the End of String line
-                _uart->TransmitByte(0x0D);
-                _uart->TransmitString("\n");
+                _uart.TransmitByte(0x0D);
+                _uart.TransmitString("\n");
                 break;
 
                 case LOGS_ENDLINE_WHITESPACE:
                 //Out Space Key on the End of String line
-                _uart->TransmitByte(0x20);
-                _uart->TransmitString(" ");
+                _uart.TransmitByte(0x20);
+                _uart.TransmitString(" ");
                 break;
             }
         }
@@ -91,12 +90,12 @@ void Logs::NewLine()
         if(_useInterrupt)
         {
             //Out Enter Key on the End of String line
-            _uart->WriteCharacterInQueue(0x0D);
+            _uart.WriteCharacterInQueue(0x0D);
         }
         else
         {
-            _uart->TransmitByte(0x0D);
-            _uart->TransmitString("\n");
+            _uart.TransmitByte(0x0D);
+            _uart.TransmitString("\n");
         }
     }
 
@@ -107,7 +106,7 @@ void Logs::WriteChar(char character)
 {
     if(_source==LOGS_SOURCE_UART0)
     {
-        _uart->TransmitByte(character);
+        _uart.TransmitByte(character);
     }
 }
 
@@ -117,11 +116,11 @@ void Logs::WriteBoolean(bool value)
     {
         if(value==0)
         {
-            _uart->TransmitString("False");
+            _uart.TransmitString("False");
         }
         else
         {
-            _uart->TransmitString("True");
+            _uart.TransmitString("True");
         }
         
     }
@@ -132,11 +131,11 @@ void Logs::WriteBoolean(int value)
     {
         if(value==0)
         {
-            _uart->TransmitByte('0');
+            _uart.TransmitByte('0');
         }
         else
         {
-            _uart->TransmitByte('1');
+            _uart.TransmitByte('1');
         }
         
     }
@@ -157,7 +156,7 @@ void Logs::WriteText(uint8* text)
             while (text[index] != 0)
             {
                 // Send every Character one by one
-                _uart->WriteCharacterInQueue(text[index]);
+                _uart.WriteCharacterInQueue(text[index]);
 
                 index++;
             }
@@ -166,7 +165,7 @@ void Logs::WriteText(uint8* text)
         else
         {
             //without using Interrupt and Queue List
-            _uart->TransmitString(text);
+            _uart.TransmitString(text);
         }
         
     }
@@ -179,11 +178,11 @@ void Logs::WriteBit(uint8 value)
     {
         if(value==0)
         {
-            _uart->TransmitByte('0');
+            _uart.TransmitByte('0');
         }
         else
         {
-            _uart->TransmitByte('1');
+            _uart.TransmitByte('1');
         }
         
     }
@@ -237,7 +236,7 @@ void Logs::WriteInteger(int number)
         char ascii[10];
         itoa(number,ascii,10);
 
-        _uart->TransmitString(ascii);
+        _uart.TransmitString(ascii);
     }
 
 }
@@ -251,7 +250,7 @@ void Logs::WriteLong(long number)
         char ascii[15];
         ltoa(number,ascii,10);
 
-        _uart->TransmitString(ascii);
+        _uart.TransmitString(ascii);
     }
 }
 
@@ -307,7 +306,7 @@ void Logs::WriteFloat(float number,char decimalCount=4)
         }
 
 
-        _uart->TransmitString(output);
+        _uart.TransmitString(output);
     }
 }
 
@@ -323,14 +322,14 @@ void Logs::WriteByteInfo(uint8 value,bool withLabel=false)
         WriteByte(value);
         sprintf(output, " | DEC-> %d | HEX-> %x \n\r", value,value,value);
 
-        _uart->TransmitString(output);
+        _uart.TransmitString(output);
     }
     else
     {
         WriteByte(value);
         sprintf(output, " / %d / %x \n\r", value,value,value);
 
-        _uart->TransmitString(output);
+        _uart.TransmitString(output);
     }
 }
 
@@ -352,5 +351,5 @@ void Logs::WriteWordInfo(uint16 value,bool withLabel=false)
 //Get the Reference of USART used with logs
 USART* Logs::GetUSART()
 {
-    return _uart;
+    return &_uart;
 }

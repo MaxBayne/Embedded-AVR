@@ -42,7 +42,7 @@ class Logs
 {
     private:
     LOGS_SOURCE _source;
-    USART* _uart;
+    USART _uart;
     bool _useInterrupt;
     
 
