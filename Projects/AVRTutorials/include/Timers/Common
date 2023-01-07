@@ -83,6 +83,7 @@ struct PrescalerInfo
 	uint64 TimeByMicroSecond;		//Time By MicroSecond
 	PrescalerType PrescalerType;	//The Prescaler Used
 	float TimeOfClock;				//Time Period For One Pulse Clock Per (MicoSecond)
+	uint32 TimerMaxCount;			//Max Count that Timer Can Count like 255 for Timer0,2 and 65535 for Timer1
 	uint64 NumberOfClocks;			//Number Of Clocks Needed To Achieve Specified Time
 	float OverflowCounts;			//Count of Overflow to Achieve the Specified Time
 	uint16 OverflowInteger; 		//The Integer Value of Overflow Counts

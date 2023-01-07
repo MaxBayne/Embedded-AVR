@@ -339,14 +339,17 @@ PrescalerInfo* Timer::Get_Prescaler_Info(PrescalerType preScaler)
 	if(_Timer==TIMER_0)
 	{
 		result->OverflowCounts= (float)result->NumberOfClocks / 256; //2^8
+		result->TimerMaxCount=255;
 	} 
 	else if(_Timer==TIMER_1)
 	{
 		result->OverflowCounts= (float)result->NumberOfClocks / 65536; //2^16
+		result->TimerMaxCount=65535;
 	}
 	else if(_Timer==TIMER_2)
 	{
 		result->OverflowCounts= (float)result->NumberOfClocks / 256; //2^8
+		result->TimerMaxCount=255;
 	}
 	
 	
@@ -438,34 +441,34 @@ PrescalerInfo* Timer::Get_Prescaler_Auto()
 	
 
 	#ifdef ENABLE_LOGS_GET_PRESCALER_AUTO
-	_log.WriteLine("====== Get Prescaler Auto ======");
-	_log.WriteText("Pre.1024 Overflow Counts = ");
-	_log.WriteFloat(prescaler_1024->OverflowCounts);
-	_log.NewLine();
+	_log->WriteLine("====== Get Prescaler Auto ======");
+	_log->WriteText("Pre.1024 Overflow Counts = ");
+	_log->WriteFloat(prescaler_1024->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Pre.256 Overflow Counts = ");
-	_log.WriteFloat(prescaler_256->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Pre.256 Overflow Counts = ");
+	_log->WriteFloat(prescaler_256->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Pre.128 (Timer2 Only) Overflow Counts = ");
-	_log.WriteFloat(prescaler_128->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Pre.128 (Timer2 Only) Overflow Counts = ");
+	_log->WriteFloat(prescaler_128->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Pre.64 Overflow Counts = ");
-	_log.WriteFloat(prescaler_64->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Pre.64 Overflow Counts = ");
+	_log->WriteFloat(prescaler_64->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Pre.32 (Timer2 Only) Overflow Counts = ");
-	_log.WriteFloat(prescaler_32->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Pre.32 (Timer2 Only) Overflow Counts = ");
+	_log->WriteFloat(prescaler_32->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Pre.8 Overflow Counts = ");
-	_log.WriteFloat(prescaler_8->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Pre.8 Overflow Counts = ");
+	_log->WriteFloat(prescaler_8->OverflowCounts);
+	_log->NewLine();
 
-	_log.WriteText("Best Prescaler = ");
-	_log.WriteFloat(result->OverflowCounts);
-	_log.NewLine();
+	_log->WriteText("Best Prescaler = ");
+	_log->WriteFloat(result->OverflowCounts);
+	_log->NewLine();
 
 	#endif
 
@@ -521,33 +524,45 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 
 	_log->WriteText("BaseFrequency   	");
 	_log->WriteLong(prescaleInfo->BaseFrequency);
+	_log->WriteText(" HZ");
 	_log->NewLine();
 
 	_log->WriteText("FinalFrequency  	");
 	_log->WriteFloat(prescaleInfo->FinalFrequency);
+	_log->WriteText(" HZ");
 	_log->NewLine();
 
 	_log->WriteText("TimeOfClock     ");
 	_log->WriteFloat(prescaleInfo->TimeOfClock);
+	_log->WriteText(" us");
 	_log->NewLine();
 
-	_log->WriteText("TimeMicroSecond ");
+	_log->WriteText("TimeRequired    ");
 	_log->WriteLong(prescaleInfo->TimeByMicroSecond);
+	_log->WriteText(" us");
+	_log->NewLine();
+
+	_log->WriteText("TimerMaxCount   ");
+	_log->WriteText("[0:");
+	_log->WriteLong(prescaleInfo->TimerMaxCount);
+	_log->WriteText("] count");
 	_log->NewLine();
 
 	_log->WriteText("NumberOfClocks  ");
 	_log->WriteLong(prescaleInfo->NumberOfClocks);
+	_log->WriteText(" clock");
 	_log->NewLine();
 
 	_log->WriteText("OverflowCounts  ");
 	_log->WriteFloat(prescaleInfo->OverflowCounts);
+	_log->WriteText(" overflow");
 	_log->NewLine();
 
 	_log->WriteText("OverflowInteger ");
 	_log->WriteInteger(prescaleInfo->OverflowInteger);
 	_log->NewLine();
 	
-	_log->WriteText("O->flowFractions ");
+	_log->WriteText("OverflowFractio ");
 	_log->WriteInteger(prescaleInfo->OverflowFractions);
 	_log->NewLine();
 
@@ -556,7 +571,7 @@ void Timer::Print_Prescaler_Info(PrescalerInfo* prescaleInfo)
 	_log->NewLine();
 
 	_log->WriteText("InitialTimerVal ");
-	_log->WriteInteger(prescaleInfo->InitialTimerValue);
+	_log->WriteLong(prescaleInfo->InitialTimerValue);
 	_log->NewLine();
 	_log->WriteLine("===================================");
 
@@ -569,6 +584,7 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 {
 	//Config Timer Clock Source by Using Register [TCCR] (Timer/Counter Control Register) with Bits [CS]
 
+	//For Timer 0 and Timer 1 [TCCR0 , TCCR1B] ================================
 	/*
 	D2  D1  D0
 	0	0	0     No Clock Source (Timer Stopped)
@@ -581,9 +597,22 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 	1	1	1     External Clk Source on T0 Rising Edge
 	*/
 	
+	//For Timer2 [TCCR2]=============================================
+	/*
+	D2  D1  D0
+	0	0	0     No Clock Source (Timer Stopped)
+	0	0	1     Clock (No Prescalling)
+	0	1	0     Clock / 8
+	0	1	1     Clock / 32
+	1	0	0     Clock / 64
+	1	0	1     Clock / 128
+	1	1	0     Clock / 256
+	1	1	1     Clock / 1024
+	*/
+	
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
 	if(_log!=NULL)
-		_log.WriteLine("====== Config Timer Clock Source ======");
+		_log->WriteLine("====== Config Timer Clock Source ======");
 	#endif
 		
 
@@ -601,7 +630,12 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
 				if(_log!=NULL)
-					_log.WriteLine("Timer0 Clock Stopped");
+				{
+					_log->WriteLine("Timer0 Clock Stopped");
+					_log->WriteLine("TCCR0 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR0);
+				}
+					
 				#endif
 				
 
@@ -613,14 +647,25 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,CS02); //CS02 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
+
 				if(_log!=NULL)
-				_log.WriteLine("Timer0 Clock Original");
+				{
+					_log->WriteLine("Timer0 Clock Original");
+					_log->WriteLine("TCCR0 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR0);
+				}
+				
 				#endif
 			}
 			else if(clock==CLOCK_WITH_PRESCALER)
 			{
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer0 Clock With Prescaler");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer0 Clock With Prescaler");
+					_log->WriteLine("TCCR0 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR0);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_FALLING_EDGE)
@@ -630,7 +675,12 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,CS02);   //CS02 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer0 Clock External Falling Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer0 Clock External Falling Edge");
+					_log->WriteLine("TCCR0 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR0);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_Rissing_EDGE)
@@ -640,120 +690,94 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,CS02);   //CS02 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer0 Clock External Rissing Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer0 Clock External Rissing Edge");
+					_log->WriteLine("TCCR0 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR0);
+				}
 				#endif
 			}
 		
 		break;
 		
-		case TIMER_1_A://Use Timer Counter Control Register [TCCR1A]
+		case TIMER_1://Use Timer Counter Control Register [TCCR1B]
 		
 			if(clock==CLOCK_STOPPED)
 			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS10); //CS10 [0] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS11); //CS11 [1] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS12); //CS12 [2] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS10); //CS10 [0] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS11); //CS11 [1] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
 
 				_IsRunning=false;
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock Stopped");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer1 Clock Stopped");
+					_log->WriteLine("TCCR1B = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR1B);
+				}
 				#endif
 
 			}
 			else if(clock==CLOCK_ORIGINAL)
 			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS10);   //CS10 [0] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS11); //CS11 [1] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS12); //CS12 [2] = 0
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS10);   //CS10 [0] = 1
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS11); //CS11 [1] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock Original");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer1 Clock Original");
+					_log->WriteLine("TCCR1B = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR1B);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_WITH_PRESCALER)
 			{
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock With Prescaler");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer1 Clock With Prescaler");
+					_log->WriteLine("TCCR1B = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR1B);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_FALLING_EDGE)
 			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS10); //CS10 [0] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS11);   //CS11 [1] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS12);   //CS12 [2] = 1
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS10); //CS10 [0] = 0
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS11);   //CS11 [1] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock External Falling Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer1 Clock External Falling Edge");
+					_log->WriteLine("TCCR1B = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR1B);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_Rissing_EDGE)
 			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS10);   //CS10 [0] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS11);   //CS11 [1] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS12);   //CS12 [2] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS10);   //CS10 [0] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS11);   //CS11 [1] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock External Rissing Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer1 Clock External Rissing Edge");
+					_log->WriteLine("TCCR1B = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR1B);
+				}
 				#endif
 			}
 			
-		
-		break;
-		
-		case TIMER_1_B://Use Timer Counter Control Register [TCCR1B]
-		
-			if(clock==CLOCK_STOPPED)
-			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS10); //CS10 [0] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS11); //CS11 [1] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
-
-				_IsRunning=false;
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock Stopped");
-				#endif
-
-			}
-			else if(clock==CLOCK_ORIGINAL)
-			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS10);   //CS10 [0] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS11); //CS11 [1] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock Original");
-				#endif
-
-			}
-			else if(clock==CLOCK_WITH_PRESCALER)
-			{
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock With Prescaler");
-				#endif
-			}
-			else if(clock==CLOCK_EXTERNAL_FALLING_EDGE)
-			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS10); //CS10 [0] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS11);   //CS11 [1] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock External Falling Edge");
-				#endif
-			}
-			else if(clock==CLOCK_EXTERNAL_Rissing_EDGE)
-			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS10);   //CS10 [0] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS11);   //CS11 [1] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
-				
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer1 Clock External Rissing Edge");
-				#endif
-			}
-		
 		
 		break;
 		
@@ -768,7 +792,12 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				_IsRunning=false;
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer2 Clock Stopped");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer2 Clock Stopped");
+					_log->WriteLine("TCCR2 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR2);
+				}
 				#endif
 
 			}
@@ -779,13 +808,23 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS22); //CS22 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer2 Clock Original");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer2 Clock Original");
+					_log->WriteLine("TCCR2 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR2);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_WITH_PRESCALER)
 			{
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer2 Clock With Prescaler");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer2 Clock With Prescaler");
+					_log->WriteLine("TCCR2 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR2);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_FALLING_EDGE)
@@ -795,7 +834,12 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer2 Clock External Falling Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer2 Clock External Falling Edge");
+					_log->WriteLine("TCCR2 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR2);
+				}
 				#endif
 			}
 			else if(clock==CLOCK_EXTERNAL_Rissing_EDGE)
@@ -805,18 +849,17 @@ void Timer::Config_Timer_Clock_Source(ClockType clock)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-				if(_log!=NULL)_log.WriteLine("Timer2 Clock External Rissing Edge");
+				if(_log!=NULL)
+				{
+					_log->WriteLine("Timer2 Clock External Rissing Edge");
+					_log->WriteLine("TCCR2 = ");
+					_log->WriteByteInfo(TIMER_REG_TCCR2);
+				}
 				#endif
 			}
 		
 		break;
 	}
-	
-
-	#ifdef ENABLE_LOGS_CONFIG_TIMER_CLOCK_SOURCE
-	if(_log!=NULL)_log.WriteByteInfo(TIMER_REG_TCCR0);
-	#endif
-	
 
 }
 
@@ -826,7 +869,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 {
 	//Config Timer Clock Source by Using Register [TCCR] (Timer/Counter Control Register) with Bits [CS]
 
-	//For Timer 0 and Timer 1 ================================
+	//For Timer 0 and Timer 1 [TCCR0 , TCCR1B] ================================
 	/*
 	D2  D1  D0
 	0	0	0     No Clock Source (Timer Stopped)
@@ -839,7 +882,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 	1	1	1     External Clk Source on T0 Rising Edge
 	*/
 	
-	//For Timer2 =============================================
+	//For Timer2 [TCCR2]=============================================
 	/*
 	D2  D1  D0
 	0	0	0     No Clock Source (Timer Stopped)
@@ -856,8 +899,8 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 
 
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-	if(_log!=NULL)_log.WriteLine("====== Config Timer Prescaler ======");
-	//_log.WriteByteInfo(TIMER_REG_TCCR0);
+	if(_log!=NULL)_log->WriteLine("====== Config Timer Prescaler ======");
+	//_log->WriteByteInfo(TIMER_REG_TCCR0);
 	#endif
 	
 
@@ -872,7 +915,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,CS02); //CS02 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer0 With Prescaler No");
+				if(_log!=NULL)_log->WriteLine("Timer0 With Prescaler No");
 				#endif
 	
 			}
@@ -883,7 +926,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,CS02); //CS02 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer0 With Prescaler 8");
+				if(_log!=NULL)_log->WriteLine("Timer0 With Prescaler 8");
 				#endif
 			}
 			else if(prescaler==PRESCALER_64)
@@ -893,7 +936,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,CS02); //CS02 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer0 With Prescaler 64");
+				if(_log!=NULL)_log->WriteLine("Timer0 With Prescaler 64");
 				#endif
 			}
 			else if(prescaler==PRESCALER_256)
@@ -903,7 +946,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,CS02);   //CS02 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer0 With Prescaler 256");
+				if(_log!=NULL)_log->WriteLine("Timer0 With Prescaler 256");
 				#endif
 			}
 			else if(prescaler==PRESCALER_1024)
@@ -913,70 +956,13 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,CS02);   //CS02 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer0 With Prescaler 1024");
+				if(_log!=NULL)_log->WriteLine("Timer0 With Prescaler 1024");
 				#endif
 			}
 		
 		break;
 		
-		case TIMER_1_A://Use Timer Counter Control Register [TCCR1A]
-		
-			if(prescaler==PRESCALER_NO)
-			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS10);   //CS10 [0] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS11); //CS11 [1] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS12); //CS12 [2] = 0
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler No");
-				#endif
-			}
-			else if(prescaler==PRESCALER_8)
-			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS10); //CS10 [0] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS11);   //CS11 [1] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS12); //CS12 [2] = 0
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 8");
-				#endif
-			}
-			else if(prescaler==PRESCALER_64)
-			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS10);   //CS10 [0] = 1
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS11);   //CS11 [1] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS12); //CS12 [2] = 0
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 64");
-				#endif
-			}
-			else if(prescaler==PRESCALER_256)
-			{
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS10); //CS10 [0] = 0
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS11); //CS11 [1] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS12);   //CS12 [2] = 1
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 256");
-				#endif
-			}
-			else if(prescaler==PRESCALER_1024)
-			{
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS10);   //CS10 [0] = 1
-				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,CS11); //CS11 [1] = 0
-				BITWISE_SET_BIT(TIMER_REG_TCCR1A,CS12);   //CS12 [2] = 1
-
-				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 1024");
-				#endif
-			}
-			
-			
-		
-		break;
-		
-		case TIMER_1_B://Use Timer Counter Control Register [TCCR1B]
+		case TIMER_1://Use Timer Counter Control Register [TCCR1B]
 		
 			if(prescaler==PRESCALER_NO)
 			{
@@ -985,7 +971,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler No");
+				if(_log!=NULL)_log->WriteLine("Timer1 With Prescaler No");
 				#endif
 			}
 			else if(prescaler==PRESCALER_8)
@@ -995,7 +981,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 8");
+				if(_log!=NULL)_log->WriteLine("Timer1 With Prescaler 8");
 				#endif
 			}
 			else if(prescaler==PRESCALER_64)
@@ -1005,7 +991,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS12); //CS12 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 64");
+				if(_log!=NULL)_log->WriteLine("Timer1 With Prescaler 64");
 				#endif
 			}
 			else if(prescaler==PRESCALER_256)
@@ -1015,7 +1001,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 256");
+				if(_log!=NULL)_log->WriteLine("Timer1 With Prescaler 256");
 				#endif
 			}
 			else if(prescaler==PRESCALER_1024)
@@ -1023,15 +1009,17 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS10);   //CS10 [0] = 1
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,CS11); //CS11 [1] = 0
 				BITWISE_SET_BIT(TIMER_REG_TCCR1B,CS12);   //CS12 [2] = 1
-
+				
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer1 With Prescaler 1024");
+				if(_log!=NULL)_log->WriteLine("Timer1 With Prescaler 1024");
 				#endif
 			}
-					
+			
+			
 		
 		break;
-		
+
+	
 		case TIMER_2://Use Timer Counter Control Register [TCCR2]
 		
 			if(prescaler==PRESCALER_NO)
@@ -1041,7 +1029,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS22); //CS22 [2] = 0
 				
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler No");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler No");
 				#endif
 			}
 			else if(prescaler==PRESCALER_8)
@@ -1051,7 +1039,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS22); //CS22 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 8");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 8");
 				#endif
 			}
 			else if(prescaler==PRESCALER_32)
@@ -1061,7 +1049,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,CS22); //CS22 [2] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 32");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 32");
 				#endif
 			}
 			else if(prescaler==PRESCALER_64)
@@ -1071,7 +1059,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 64");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 64");
 				#endif
 			}
 			else if(prescaler==PRESCALER_128)
@@ -1081,7 +1069,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   //CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 128");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 128");
 				#endif
 			}
 			else if(prescaler==PRESCALER_256)
@@ -1091,7 +1079,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   	//CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 256");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 256");
 				#endif
 			}
 			else if(prescaler==PRESCALER_1024)
@@ -1101,7 +1089,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,CS22);   	//CS22 [2] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-				if(_log!=NULL)_log.WriteLine("Timer2 With Prescaler 1024");
+				if(_log!=NULL)_log->WriteLine("Timer2 With Prescaler 1024");
 				#endif
 			}
 
@@ -1111,7 +1099,7 @@ void Timer::Config_Timer_Prescaler(PrescalerType prescaler)
 	
 
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_PRESCALER
-	//if(_log!=NULL)_log.WriteByteInfo(TIMER_REG_TCCR0);
+	//if(_log!=NULL)_log->WriteByteInfo(TIMER_REG_TCCR0);
 	#endif
 
 }
@@ -1124,7 +1112,7 @@ void Timer::Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo)
 
 	if(_Timer == TIMER_0 || _Timer == TIMER_2)
 	{
-		//For 8 Bit Timer Register
+		//For 8 Bit Timer Register like Timer0,Timer2
 		
 		if(prescalerInfo->NumberOfClocks<=256)
 		{
@@ -1155,14 +1143,14 @@ void Timer::Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo)
 	}
 	else if(_Timer == TIMER_1)
 	{
-		//For 16 Bit Timer Register
+		//For 16 Bit Timer Register like Timer1
 		
 		if(prescalerInfo->NumberOfClocks<=65536)
 		{
 			//if required clocks lower than the overflow value for timer value register then will set initial timer for some value and after overflow then mean
 			//timer reached to required time and count the number of clocks needed
 			prescalerInfo->InitialTimerValue = 65536 - prescalerInfo->NumberOfClocks;
-			
+
 			//Number of Clocks is Equal or Lower Than 65536 then No Need For Overflow Count
 			prescalerInfo->OverflowCounts=1;
 			prescalerInfo->OverflowInteger=1;
@@ -1215,12 +1203,11 @@ void Timer::Config_Timer_Initial_Value(PrescalerInfo* prescalerInfo)
 	 #ifdef ENABLE_LOGS_CONFIG_TIMER_INITIAL_VALUE
 	 if(_log!=NULL)
 	 {
-		_log.WriteLine("====== Config Timer Initial Value ======");
+		_log->WriteLine("====== Config Timer Initial Value ======");
 		Print_Prescaler_Info(prescalerInfo);
 	 }
 	 
 	 #endif
-
 
 }
 
@@ -1230,9 +1217,9 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 {
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
 	if(_log!=NULL)
-	_log.WriteLine("====== Config Timer Mode ======");
-	//_log.WriteLine("TCCR0 = WGM01(3),WGM00(6)");
-	//_log.WriteByteInfo(TIMER_REG_TCCR0);
+	_log->WriteLine("====== Config Timer Mode ======");
+	//_log->WriteLine("TCCR0 = WGM01(3),WGM00(6)");
+	//_log->WriteByteInfo(TIMER_REG_TCCR0);
 	#endif
 	
 	switch(_Timer)
@@ -1245,7 +1232,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,WGM00); //WGM00 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer0 Set To Mode Normal");
+				if(_log!=NULL)_log->WriteLine("Timer0 Set To Mode Normal");
 				#endif
 			}
 			else if(mode==MODE_COMPARE_CTC)
@@ -1254,7 +1241,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,WGM00); //WGM00 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer0 Set To Mode CTC");
+				if(_log!=NULL)_log->WriteLine("Timer0 Set To Mode CTC");
 				#endif
 			}
 			else if(mode==MODE_PWM_CORRECT)
@@ -1263,7 +1250,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,WGM00); //WGM00 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer0 Set To Mode PWM Correct");
+				if(_log!=NULL)_log->WriteLine("Timer0 Set To Mode PWM Correct");
 				#endif
 			}
 			else if(mode==MODE_PWM_FAST)
@@ -1272,7 +1259,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR0,WGM00); //WGM00 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer0 Set To Mode PWM Fast");
+				if(_log!=NULL)_log->WriteLine("Timer0 Set To Mode PWM Fast");
 				#endif
 			}
 			else if(mode==MODE_INPUT_CAPTURE_FLAG)
@@ -1281,12 +1268,62 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR0,WGM00); //WGM00 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer0 Set To Mode Input Capture");
+				if(_log!=NULL)_log->WriteLine("Timer0 Set To Mode Input Capture");
 				#endif
 			}
 		
 		break;
 		
+		case TIMER_1://Use Timer Counter Control Register [TCCR1A]
+			
+			if(mode==MODE_NORMAL)
+			{
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM11); //WGM11 [3] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode Normal");
+				#endif
+			}
+			else if(mode==MODE_COMPARE_CTC)
+			{
+				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM11); //WGM11 [3] = 1
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode CTC");
+				#endif
+			}
+			else if(mode==MODE_PWM_CORRECT)
+			{
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM11); //WGM11 [3] = 0
+				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 1
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Correct");
+				#endif
+			}
+			else if(mode==MODE_PWM_FAST)
+			{
+				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM11); //WGM11 [3] = 1
+				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 1
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Fast");
+				#endif
+			}
+			else if(mode==MODE_INPUT_CAPTURE_FLAG)
+			{
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM11); //WGM11 [3] = 0
+				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
+
+				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
+				_log->WriteLine("Timer1 Set To Mode Input Capture");
+				#endif
+			}
+			
+		break;
+
 		case TIMER_1_A://Use Timer Counter Control Register [TCCR1A]
 			
 			if(mode==MODE_NORMAL)
@@ -1295,7 +1332,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode Normal");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode Normal");
 				#endif
 			}
 			else if(mode==MODE_COMPARE_CTC)
@@ -1304,7 +1341,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode CTC");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode CTC");
 				#endif
 			}
 			else if(mode==MODE_PWM_CORRECT)
@@ -1313,7 +1350,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode PWM Correct");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Correct");
 				#endif
 			}
 			else if(mode==MODE_PWM_FAST)
@@ -1322,7 +1359,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode PWM Fast");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Fast");
 				#endif
 			}
 			else if(mode==MODE_INPUT_CAPTURE_FLAG)
@@ -1331,7 +1368,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1A,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				_log.WriteLine("Timer1 Set To Mode Input Capture");
+				_log->WriteLine("Timer1 Set To Mode Input Capture");
 				#endif
 			}
 			
@@ -1345,7 +1382,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode Normal");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode Normal");
 				#endif
 			}
 			else if(mode==MODE_COMPARE_CTC)
@@ -1354,7 +1391,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode CTC");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode CTC");
 				#endif
 			}
 			else if(mode==MODE_PWM_CORRECT)
@@ -1363,7 +1400,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1B,WGM10); //WGM10 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode PWM Correct");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Correct");
 				#endif
 			}
 			else if(mode==MODE_PWM_FAST)
@@ -1372,7 +1409,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR1B,WGM10); //WGM10 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode PWM Fast");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode PWM Fast");
 				#endif
 			}
 			else if(mode==MODE_INPUT_CAPTURE_FLAG)
@@ -1381,7 +1418,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR1B,WGM10); //WGM10 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer1 Set To Mode Input Capture");
+				if(_log!=NULL)_log->WriteLine("Timer1 Set To Mode Input Capture");
 				#endif
 			}
 		
@@ -1395,7 +1432,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,WGM20); //WGM20 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer2 Set To Mode Normal");
+				if(_log!=NULL)_log->WriteLine("Timer2 Set To Mode Normal");
 				#endif
 			}
 			else if(mode==MODE_COMPARE_CTC)
@@ -1404,7 +1441,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,WGM20); //WGM20 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer2 Set To Mode CTC");
+				if(_log!=NULL)_log->WriteLine("Timer2 Set To Mode CTC");
 				#endif
 			}
 			else if(mode==MODE_PWM_CORRECT)
@@ -1413,7 +1450,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,WGM20); //WGM20 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer2 Set To Mode PWM Correct");
+				if(_log!=NULL)_log->WriteLine("Timer2 Set To Mode PWM Correct");
 				#endif
 			}
 			else if(mode==MODE_PWM_FAST)
@@ -1422,7 +1459,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_SET_BIT(TIMER_REG_TCCR2,WGM20); //WGM20 [6] = 1
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer2 Set To Mode PWM Fast");
+				if(_log!=NULL)_log->WriteLine("Timer2 Set To Mode PWM Fast");
 				#endif
 			}
 			else if(mode==MODE_INPUT_CAPTURE_FLAG)
@@ -1431,7 +1468,7 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 				BITWISE_CLEAR_BIT(TIMER_REG_TCCR2,WGM20); //WGM20 [6] = 0
 
 				#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-				if(_log!=NULL)_log.WriteLine("Timer2 Set To Mode Input Capture");
+				if(_log!=NULL)_log->WriteLine("Timer2 Set To Mode Input Capture");
 				#endif
 			}
 			
@@ -1439,8 +1476,8 @@ void Timer::Config_Timer_Mode(TimerMode mode)
 	}
 
 	#ifdef ENABLE_LOGS_CONFIG_TIMER_MODE
-	//if(_log!=NULL)_log.WriteLine("TCCR0 = WGM01(3),WGM00(6)");
-	//_log.WriteByteInfo(TIMER_REG_TCCR0);
+	//if(_log!=NULL)_log->WriteLine("TCCR0 = WGM01(3),WGM00(6)");
+	//_log->WriteByteInfo(TIMER_REG_TCCR0);
 	#endif
 }
 

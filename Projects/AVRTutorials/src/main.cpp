@@ -14,7 +14,7 @@ void toggle_Pin_A0()
 	  GPIO::Pin_Toggle(GPIO_IO_PA0);
     //We Can Stop Timer Here by set Clock Source = nothing
 
-    _log->WriteLine("1 Second Fired , and Toggle Pin A0");
+    //_log->WriteLine("1 Second Fired , and Toggle Pin A0");
 }
 
 void toggle_Pin_A1()
@@ -24,7 +24,7 @@ void toggle_Pin_A1()
     //We Can Stop Timer Here by set Clock Source = nothing
 
 
-    _log->WriteLine("1 Second Fired , and Toggle Pin A1");
+    //_log->WriteLine("1 Second Fired , and Toggle Pin A1");
 }
 
 void toggle_Pin_A2()
@@ -32,7 +32,7 @@ void toggle_Pin_A2()
 	  GPIO::Pin_Toggle(GPIO_IO_PA2);
 
     //We Can Stop Timer Here by set Clock Source = nothing
-   _log->WriteLine("1 Second Fired , and Toggle Pin A2");
+   //_log->WriteLine("1 Second Fired , and Toggle Pin A2");
 }
 
 int main(void)
