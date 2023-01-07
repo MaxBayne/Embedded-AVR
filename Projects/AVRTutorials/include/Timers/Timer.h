@@ -96,8 +96,8 @@ class Timer
 	//Start Timer and Execute Action Every Period (Repeated Timer)
 	void Start(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto);
 
-	//Delay Timer and Execute Action Once after Period (Once Timer)
-	void Delay(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto);
+	//Start Timer and Execute Action Once after Period (Once Timer)
+	void StartOnce(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto);
 
 	//Stop Timer , Stop Interrupt
 	void Stop();

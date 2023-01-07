@@ -92,36 +92,55 @@ void Timer::Start(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType c
 
 }
 
-//Delay Timer and Execute Action Once after Period (Once Timer)
-void Timer::Delay(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto)
+//Start Timer and Execute Action Once after Period (Once Timer)
+void Timer::StartOnce(float delayTime,TimeUnit unit,void(*functionPtr)(),ClockType clock=CLOCK_WITH_PRESCALER,PrescalerType prescaler=PRESCALER_Auto)
 {
-	/*
 	_Time = delayTime;
 	_TimeUnit = unit;
-	_Timer_Overflow_Callback_Ptr = functionPtr;
-	_TimeByMicroSecond = Convert_Time_To_MicroSecond(delayTime,unit);
-	_DurationMode=DURATION_MODE::ONCE;
+	_Clock = clock;
+	_DurationMode=TimerDuration::DURATION_ONCE;
+	Overflow_Callback_Handler = functionPtr;
 	
-	//Stop Timer as Default State
-	Config_Timer_Clock_Source(CLOCK_SOURCE::CLOCK_STOPPED);
-
-
-	//Start Timer as Normal Mode
-	//StartTimer(delayTime,unit,DURATION_MODE::ONCE);
-
-	_log.WriteLine("Timer Started");
-	
-	//Wait For Timer To Overflow mean Timer Finish The Delay Time
-	while (_IsOverflow==false)
+	//If Timer Running then Stop it
+	if(_IsRunning)
 	{
-		_log.WriteLine("Timer Running");
-	};
-	
-	_log.WriteLine("Timer Stopped");
+		//Stop Timer as Default State
+		Config_Timer_Clock_Source(ClockType::CLOCK_STOPPED);
+	}
 
-	//Stop Timer and Clear Flag
-	Stop();
-	*/
+	//1) Get Prescaler Info For Timer if Timer Will Use It Only
+	if(_Clock==CLOCK_WITH_PRESCALER)
+	{
+		if(prescaler == PRESCALER_Auto)
+		{
+			_PrescalerInfo=Get_Prescaler_Auto();
+		}
+		else
+		{
+			_PrescalerInfo=Get_Prescaler_Info(prescaler);
+		}
+		
+	}
+
+	//2) Config Prescaler For Timer (No Prescaler - PreScaler8 - PreScaler64 - PreScaler256 - PreScaler1024)
+	Config_Timer_Prescaler(_PrescalerInfo->PrescalerType);
+	
+	//3) Config Initial Value For Timer inside Register [TCNT] depend on (No of Clocks)
+	Config_Timer_Initial_Value(_PrescalerInfo);
+
+	//4) Config Timer Mode To Normal/Overflow
+	Config_Timer_Mode(TimerMode::MODE_NORMAL);
+	
+	//5) Set Timer Clock Source With/Without Prescaler
+	Config_Timer_Clock_Source(_Clock);
+
+	//6) Enable Timer Interrupt For Normal Mode
+	TimerInterrupt::Enable_Interrupt(this);
+	
+	//Update Timer Status
+	_IsRunning=true;
+	_IsInterrupt=true;	
+
 }
 
 //Stop Timer , Stop Interrupt
